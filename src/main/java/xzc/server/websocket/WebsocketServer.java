@@ -19,7 +19,7 @@ import java.net.InetSocketAddress;
 public class WebsocketServer {
 
 
-    @Value("${ws.port}")
+    @Value("${ws.port:8800}")
     private int wsPort;
 
     private EventLoopGroup boss = new NioEventLoopGroup();

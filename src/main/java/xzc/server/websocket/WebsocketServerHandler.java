@@ -85,36 +85,9 @@ public class WebsocketServerHandler extends SimpleChannelInboundHandler<SignalMe
 
     private void echo(ChannelHandlerContext ctx, SignalMessage msg) {
         log.info("echo");
+        // 原包发回去
+        ctx.channel().writeAndFlush(msg);
     }
-//
-//    private void userLogin(ChannelHandlerContext ctx, Long uid, String sid) throws IOException {
-//        if (!UserLoginUtils.checkToken(uid, sid)) {
-//            log.info("非法登录: {}, {}", uid, sid);
-//            // 登录异常, 发送下线通知
-//            WSBaseResProtoOuterClass.WSBaseResProto wsBaseResProto = WSBaseResProtoOuterClass.WSBaseResProto.newBuilder()
-//                    .setType(WSResTypeConstant.LOGIN_OUT)
-//                    .setCreateTime(new Date().toString())
-//                    .build();
-//            // 发送下线消息
-//            ctx.channel().writeAndFlush(wsBaseResProto);
-//            return;
-//        }
-//
-//        // 判断是否在线, 如果在线, 则剔除当前在线用户
-//        Channel channel = WSSocketHolder.get(uid);
-//        // 如果不是第一次登陆, 并且 客户端ID和当前的不匹配, 则通知之前的客户端下线
-//        if (channel != null && !ctx.channel().id().equals(channel.id())) {
-//            WSBaseResProtoOuterClass.WSBaseResProto wsBaseResProto = WSBaseResProtoOuterClass.WSBaseResProto.newBuilder()
-//                    .setType(WSResTypeConstant.WS_OUT)
-//                    .setCreateTime(new Date().toString())
-//                    .build();
-//            // 发送下线消息
-//            channel.writeAndFlush(wsBaseResProto);
-//        }
-//
-//        // 加入 在线 map 中
-//        WSSocketHolder.put(uid, ctx.channel());
-//    }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
