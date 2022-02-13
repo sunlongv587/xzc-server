@@ -18,7 +18,6 @@ import java.net.InetSocketAddress;
 @Component
 public class WebsocketServer {
 
-
     @Value("${ws.port:8800}")
     private int wsPort;
 

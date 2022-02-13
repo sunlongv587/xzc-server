@@ -7,15 +7,22 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import xzc.server.proto.MessageType;
 import xzc.server.proto.SignalMessage;
+import xzc.server.service.XzcSignalService;
 
 import java.io.IOException;
 import java.util.Map;
 
+@Component
 @ChannelHandler.Sharable
 @Slf4j
 public class WebsocketServerHandler extends SimpleChannelInboundHandler<SignalMessage> {
+
+    @Autowired
+    private XzcSignalService xzcSignalService;
 
     /**
      * 取消绑定
@@ -68,14 +75,17 @@ public class WebsocketServerHandler extends SimpleChannelInboundHandler<SignalMe
         int gameId = msg.getGameId();
         MessageType type = msg.getType();
         long timestamp = msg.getTimestamp();
-        Map<String, Any> payloadMap = msg.getPayloadMap();
+        Any payload = msg.getPayload();
         switch (type) {
             case ECHO: // 心跳
                 log.info("客户端echo");
                 echo(ctx, msg);
                 break;
             case SIGNAL: // 处理信令
-                log.info("客户端信令");
+                log.info("客户端信令signal");
+                if (gameId == 1) {
+                    xzcSignalService.handleSignal(ctx, msg);
+                }
                 break;
             default:
                 log.info("未知类型");
