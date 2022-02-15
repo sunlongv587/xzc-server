@@ -3,32 +3,54 @@ package xzc.server.service;
 import com.google.protobuf.Any;
 import com.google.protobuf.InvalidProtocolBufferException;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.util.AttributeKey;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import xzc.server.proto.LoginRequestBody;
-import xzc.server.proto.SignalMessage;
-import xzc.server.proto.XZCCommand;
-import xzc.server.proto.XZCSignal;
+import xzc.server.bean.UserInfo;
+import xzc.server.proto.*;
+import xzc.server.websocket.WebsocketHolder;
 
-import java.util.Map;
+import java.math.BigDecimal;
 
+
+@Slf4j
 @Service
 public class XzcSignalService {
 
+    @Autowired
+    private RoomService roomService;
+
+
     public void handleSignal(ChannelHandlerContext ctx, SignalMessage msg) throws InvalidProtocolBufferException {
+
         Any payload = msg.getPayload();
         if (payload.is(XZCSignal.class)) {
             XZCSignal signal = payload.unpack(XZCSignal.class);
             XZCCommand command = signal.getCommand();
+            Any body = signal.getBody();
             switch(command) {
                 case LOGIN_REQUEST:
-                    Any body = signal.getBody();
-                    if (body.is(LoginRequestBody.class)) {
-                        LoginRequestBody loginRequestBody = body.unpack(LoginRequestBody.class);
-                        login(loginRequestBody);
+
+                    if (body.is(LoginRequest.class)) {
+                        LoginRequest loginRequest = body.unpack(LoginRequest.class);
+                        login(ctx, loginRequest);
                     }
                     break;
                 case LOGIN_RESPONSE:
+                case QUICK_JOIN_ROOM_RESPONSE:
+                    log.warn("忽略处理");
                     break;
+
+                case QUICK_JOIN_ROOM_REQUEST:
+                    // TODO: 2022/2/15 处理快速加入房间请求
+//                    Any body = signal.getBody();
+                    if (body.is(QuickJoinRoomRequest.class)) {
+                        QuickJoinRoomRequest quickJoinRoomRequest = body.unpack(QuickJoinRoomRequest.class);
+//                        login(ctx, loginRequest);
+                        roomService.quickJoin(quickJoinRoomRequest);
+                    }
+
                 default:
                     break;
             }
@@ -36,9 +58,31 @@ public class XzcSignalService {
     }
 
 
-    public void login(LoginRequestBody loginRequestBody) {
-        // TODO: 2022/2/13 记录登录状态
+    public void login(ChannelHandlerContext ctx, LoginRequest loginRequest) {
+        // TODO: 2022/2/15 根据登录请求获取用户信息， 昵称，ID，头像，资产等
+//        ctx.channel().hasAttr()
+        // 先固定使用一个用户，测试
+        UserInfo userInfo = new UserInfo()
+                .setUid(1L)
+                .setNickname("sl")
+                .setAvatar(null)
+                .setBeans(new BigDecimal("9999"));
+        ctx.channel().attr(AttributeKey.valueOf("userInfo")).set(userInfo);
+        // TODO: 2022/2/13 记录登录状态，将用户channel, 和用户信息记录到map中
+        WebsocketHolder.put(userInfo.getUid(), ctx.channel());
         // TODO: 2022/2/13 返回登录响应
-
+        LoginResponse loginResponse = LoginResponse.newBuilder()
+                .setSuccess(true)
+                .setUserInfo(xzc.server.proto.UserInfo.newBuilder()
+                        .setUid(userInfo.getUid())
+                        .setNickname(userInfo.getNickname())
+                        .setAvatar(userInfo.getAvatar())
+                        .setBeans(userInfo.getBeans().doubleValue())
+                        .build())
+                .build();
+        // 返回信息给客户端
+        ctx.channel().writeAndFlush(loginResponse);
     }
+
+
 }
