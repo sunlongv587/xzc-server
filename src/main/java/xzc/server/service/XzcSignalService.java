@@ -9,14 +9,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import xzc.server.bean.UserInfo;
 import xzc.server.proto.*;
-import xzc.server.websocket.WebsocketHolder;
-
-import java.math.BigDecimal;
 
 
 @Slf4j
 @Service
 public class XzcSignalService {
+
+    @Autowired
+    private AccountService accountService;
 
     @Autowired
     private RoomService roomService;
@@ -34,7 +34,7 @@ public class XzcSignalService {
 
                     if (body.is(LoginRequest.class)) {
                         LoginRequest loginRequest = body.unpack(LoginRequest.class);
-                        login(ctx, loginRequest);
+                        accountService.login(ctx, loginRequest);
                     }
                     break;
                 case LOGIN_RESPONSE:
@@ -48,7 +48,8 @@ public class XzcSignalService {
                     if (body.is(QuickJoinRoomRequest.class)) {
                         QuickJoinRoomRequest quickJoinRoomRequest = body.unpack(QuickJoinRoomRequest.class);
 //                        login(ctx, loginRequest);
-                        roomService.quickJoin(quickJoinRoomRequest);
+                        UserInfo userInfo = (UserInfo) ctx.channel().attr(AttributeKey.valueOf("userInfo")).get();
+                        roomService.quickJoin(userInfo, quickJoinRoomRequest);
                     }
 
                 default:
@@ -58,31 +59,6 @@ public class XzcSignalService {
     }
 
 
-    public void login(ChannelHandlerContext ctx, LoginRequest loginRequest) {
-        // TODO: 2022/2/15 根据登录请求获取用户信息， 昵称，ID，头像，资产等
-//        ctx.channel().hasAttr()
-        // 先固定使用一个用户，测试
-        UserInfo userInfo = new UserInfo()
-                .setUid(1L)
-                .setNickname("sl")
-                .setAvatar(null)
-                .setBeans(new BigDecimal("9999"));
-        ctx.channel().attr(AttributeKey.valueOf("userInfo")).set(userInfo);
-        // TODO: 2022/2/13 记录登录状态，将用户channel, 和用户信息记录到map中
-        WebsocketHolder.put(userInfo.getUid(), ctx.channel());
-        // TODO: 2022/2/13 返回登录响应
-        LoginResponse loginResponse = LoginResponse.newBuilder()
-                .setSuccess(true)
-                .setUserInfo(xzc.server.proto.UserInfo.newBuilder()
-                        .setUid(userInfo.getUid())
-                        .setNickname(userInfo.getNickname())
-                        .setAvatar(userInfo.getAvatar())
-                        .setBeans(userInfo.getBeans().doubleValue())
-                        .build())
-                .build();
-        // 返回信息给客户端
-        ctx.channel().writeAndFlush(loginResponse);
-    }
 
 
 }
