@@ -7,22 +7,22 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import xzc.server.proto.MessageType;
 import xzc.server.proto.SignalMessage;
 import xzc.server.service.XzcSignalService;
 
 import java.io.IOException;
-import java.util.Map;
 
-@Component
 @ChannelHandler.Sharable
 @Slf4j
 public class WebsocketServerHandler extends SimpleChannelInboundHandler<SignalMessage> {
 
-    @Autowired
     private XzcSignalService xzcSignalService;
+
+    public WebsocketServerHandler setXzcSignalService(XzcSignalService xzcSignalService) {
+        this.xzcSignalService = xzcSignalService;
+        return this;
+    }
 
     /**
      * 取消绑定

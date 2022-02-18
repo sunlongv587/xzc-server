@@ -1,14 +1,15 @@
 package xzc.server.service;
 
+import com.google.protobuf.Any;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import xzc.server.bean.AliveRoom;
 import xzc.server.bean.Gamer;
 import xzc.server.bean.UserInfo;
-import xzc.server.proto.ParticipantEvent;
-import xzc.server.proto.ParticipantState;
-import xzc.server.proto.QuickJoinRoomRequest;
+import xzc.server.proto.*;
+
+import java.util.ArrayList;
 
 @Service
 @Slf4j
@@ -16,6 +17,9 @@ public class RoomService {
 
     @Autowired
     private AliveRoomHolder aliveRoomHolder;
+
+    @Autowired
+    private PushService pushService;
 
     public void quickJoin(UserInfo userInfo, QuickJoinRoomRequest quickJoinRoomRequest) {
         // 选择或者创建一个房间
@@ -28,9 +32,16 @@ public class RoomService {
                 .setJoinTime(joinTime)
                 .setLastStateChange(joinTime);
         aliveRoom.getGamerMap().put(gamer.getUid(), gamer);
-//        aliveRoom
-//        quickJoinRoomRequest.get
-        // TODO: 2022/2/15 通知房间内的其他成员
+        QuickJoinRoomResponse quickJoinRoomResponse = QuickJoinRoomResponse.newBuilder()
+                .setRoomId(aliveRoom.getRoomId())
+//                .putAllParticipants()
+                .build();
+        XZCSignal xzcSignal = XZCSignal.newBuilder()
+                .setCommand(XZCCommand.QUICK_JOIN_ROOM_RESPONSE)
+                .setBody(Any.pack(quickJoinRoomResponse))
+                .build();
+        // 通知房间内的其他成员
+        pushService.batchPushSignal(new ArrayList<>(aliveRoom.getGamerMap().keySet()), xzcSignal);
     }
 
 

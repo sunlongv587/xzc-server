@@ -21,7 +21,6 @@ public class XzcSignalService {
     @Autowired
     private RoomService roomService;
 
-
     public void handleSignal(ChannelHandlerContext ctx, SignalMessage msg) throws InvalidProtocolBufferException {
 
         Any payload = msg.getPayload();

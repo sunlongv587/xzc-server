@@ -4,6 +4,7 @@ import com.google.protobuf.MessageLite;
 import com.google.protobuf.MessageLiteOrBuilder;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -26,6 +27,12 @@ import static io.netty.buffer.Unpooled.wrappedBuffer;
 
 
 public class WebsocketServerInitializer extends ChannelInitializer<SocketChannel> {
+
+    private ChannelInboundHandler channelInboundHandler;
+
+    public WebsocketServerInitializer(ChannelInboundHandler channelInboundHandler) {
+        this.channelInboundHandler = channelInboundHandler;
+    }
 
     @Override
     protected void initChannel(SocketChannel ch) throws Exception {
@@ -76,7 +83,8 @@ public class WebsocketServerInitializer extends ChannelInitializer<SocketChannel
         pipeline.addLast(new ProtobufDecoder(SignalMessage.getDefaultInstance()));
 
         // websocket定义了传递数据的6中frame类型
-        pipeline.addLast(new WebsocketServerHandler());
+        pipeline.addLast(channelInboundHandler);
 
     }
+
 }
