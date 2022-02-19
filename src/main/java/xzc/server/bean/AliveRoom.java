@@ -24,5 +24,4 @@ public class AliveRoom {
     public LinkedHashMap<Long, Gamer> gamerMap;
 
 
-
 }

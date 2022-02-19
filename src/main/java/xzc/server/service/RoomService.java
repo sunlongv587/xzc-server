@@ -52,4 +52,5 @@ public class RoomService {
                 .setAvatar(userInfo.getAvatar());
     }
 
+
 }

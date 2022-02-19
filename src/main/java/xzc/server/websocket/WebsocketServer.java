@@ -20,8 +20,8 @@ import java.net.InetSocketAddress;
 @Component
 public class WebsocketServer {
 
-    @Value("${ws.port:8800}")
-    private int wsPort;
+    @Value("${websocket.port:8800}")
+    private int websocketPort;
 
     @Autowired
     private XzcSignalService xzcSignalService;
@@ -41,7 +41,7 @@ public class WebsocketServer {
         ServerBootstrap bootstrap = new ServerBootstrap()
                 .group(boss, work)
                 .channel(NioServerSocketChannel.class)
-                .localAddress(new InetSocketAddress(wsPort))
+                .localAddress(new InetSocketAddress(websocketPort))
                 //保持长连接
                 .childOption(ChannelOption.SO_KEEPALIVE, true)
                 .childHandler(new WebsocketServerInitializer(
