@@ -3,6 +3,7 @@ package xzc.server.config;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -11,9 +12,17 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import xzc.server.util.SnowflakeIdWorker;
 
 @Configuration
 public class AppConfiguration {
+
+    @Bean
+    public SnowflakeIdWorker snowflakeIdWorker(
+            @Value("${app.snowflake.worker-id:0}") int workerId,
+            @Value("${app.snowflake.dataCenter-id:0}") int dataCenterId) {
+        return new SnowflakeIdWorker(workerId, dataCenterId);
+    }
 
     /**
      * 设置 redisTemplate 操作对象序列化方式

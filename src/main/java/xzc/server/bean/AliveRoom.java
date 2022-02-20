@@ -3,6 +3,7 @@ package xzc.server.bean;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import xzc.server.constant.RoomState;
+import xzc.server.proto.Participant;
 import xzc.server.proto.RoomType;
 
 import java.util.LinkedHashMap;
@@ -21,7 +22,7 @@ public class AliveRoom {
 
     public RoomState state = RoomState.OPENED;
 
-    public LinkedHashMap<Long, Gamer> gamerMap;
+    public LinkedHashMap<Long, Participant> participantMap;
 
 
 }

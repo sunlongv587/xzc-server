@@ -6,6 +6,7 @@ import lombok.experimental.Accessors;
 import xzc.server.proto.XZCCard;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Accessors(chain = true)
@@ -23,5 +24,6 @@ public class Game {
 //    private List<Long> gamersCard = Lists.newArrayListWithCapacity(6);	//加入赌局的玩家 下标为gamerID 0为pass 1为加入
 //    int[] GamersCard = new int[3];	//玩家手里的牌的点数
     private Integer omiCard;					//小早川牌
+    private Map<Long, Gamer> gameMap;
     private Long LastChangeTime;
 }
