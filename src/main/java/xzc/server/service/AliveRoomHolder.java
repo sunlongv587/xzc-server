@@ -11,8 +11,6 @@ import xzc.server.bean.UserInfo;
 import xzc.server.constant.RedisKey;
 import xzc.server.constant.RoomState;
 import xzc.server.proto.Participant;
-import xzc.server.proto.ParticipantEvent;
-import xzc.server.proto.ParticipantState;
 import xzc.server.proto.RoomType;
 
 import java.util.LinkedHashMap;
@@ -78,10 +76,16 @@ public class AliveRoomHolder {
             @Override
             protected Void innerCall() throws Exception {
                 long joinTime = System.currentTimeMillis();
+
+                Integer joinedIncr = aliveRoom.getJoinedIncr();
                 AliveRoom.Member member = userInfoToMember(userInfo)
+                        .setIndex(joinedIncr++)
                         .setEvent(AliveRoom.MemberEvent.JOIN)
-                        .setState(AliveRoom.MemberState.IDLE);
+                        .setState(AliveRoom.MemberState.IDLE)
+                        .setJoinTime(joinTime)
+                        .setLastStateChange(joinTime);
                 aliveRoom.getMembersMap().put(member.getUid(), member);
+                aliveRoom.setJoinedIncr(joinedIncr);
                 return null;
             }
         });
@@ -165,7 +169,7 @@ public class AliveRoomHolder {
             } finally {
                 if (changed) {
                     //保存修改后的aliveSession
-//                    aliveRoom.setLastChangeTime(System.currentTimeMillis());
+                    aliveRoom.setLastChangeTime(System.currentTimeMillis());
                     saveAliveRoom(aliveRoom);
                 }
             }

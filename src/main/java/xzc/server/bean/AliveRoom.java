@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import xzc.server.constant.RoomState;
-import xzc.server.proto.Participant;
 import xzc.server.proto.ParticipantEvent;
 import xzc.server.proto.ParticipantState;
 import xzc.server.proto.RoomType;
@@ -29,6 +28,8 @@ public class AliveRoom {
     private RoomState state = RoomState.OPENED;
 
     private LinkedHashMap<Long, Member> membersMap;
+
+    private Long lastChangeTime;
 
     @Getter
     @Setter

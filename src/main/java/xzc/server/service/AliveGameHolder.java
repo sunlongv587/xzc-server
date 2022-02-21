@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
-public class GameService {
+public class AliveGameHolder {
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
@@ -23,27 +23,27 @@ public class GameService {
     @Autowired
     private RedissonClient redissonClient;
 
-    private String getRoomKey(Long gameId) {
+    private String getGameKey(Long gameId) {
         return RedisKey.makeKey(RedisKey.GAME, gameId);
     }
 
-    private String getRoomLockKey(Long gameId) {
+    private String getGameLockKey(Long gameId) {
         return RedisKey.makeKey(RedisKey.GAME_LOCK, gameId);
     }
 
     public AliveGame getGame(Long gameId) {
-        return (AliveGame) redisTemplate.opsForValue().get(getRoomKey(gameId));
+        return (AliveGame) redisTemplate.opsForValue().get(getGameKey(gameId));
     }
 
     public void saveGame(AliveGame aliveGame) {
-        String roomKey = getRoomKey(aliveGame.getId());
+        String roomKey = getGameKey(aliveGame.getId());
         redisTemplate.opsForValue().set(roomKey, aliveGame, 3, TimeUnit.DAYS);
     }
 
 
 
     public <T> T handleWithSessionLock(long sessionId, Callable<T> handleImpl) throws Exception{
-        RLock sLock = redissonClient.getLock(getRoomLockKey(sessionId));
+        RLock sLock = redissonClient.getLock(getGameLockKey(sessionId));
         long timeout = 5000L;
         if (!sLock.tryLock(timeout, timeout,TimeUnit.MILLISECONDS)) {
             //that should not happen.
