@@ -3,6 +3,8 @@ package xzc.server.bean;
 import com.google.common.collect.Lists;
 import lombok.Data;
 import lombok.experimental.Accessors;
+import xzc.server.proto.ParticipantEvent;
+import xzc.server.proto.ParticipantState;
 import xzc.server.proto.XZCCard;
 
 import java.util.List;
@@ -10,7 +12,7 @@ import java.util.Map;
 
 @Data
 @Accessors(chain = true)
-public class Game {
+public class AliveGame {
 
     private Long id;
     /**
@@ -26,4 +28,23 @@ public class Game {
     private Integer omiCard;					//小早川牌
     private Map<Long, Gamer> gameMap;
     private Long LastChangeTime;
+
+    @Data
+    @Accessors(chain = true)
+    public static class Gamer {
+
+        private Long uid;
+
+        private String nickname;
+
+        private String avatar;
+
+        private ParticipantState state;
+
+        private ParticipantEvent event;
+
+        private Long joinTime;
+
+        private Long lastStateChange;
+    }
 }

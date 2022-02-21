@@ -1,9 +1,13 @@
 package xzc.server.bean;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.experimental.Accessors;
 import xzc.server.constant.RoomState;
 import xzc.server.proto.Participant;
+import xzc.server.proto.ParticipantEvent;
+import xzc.server.proto.ParticipantState;
 import xzc.server.proto.RoomType;
 
 import java.util.LinkedHashMap;
@@ -12,17 +16,80 @@ import java.util.LinkedHashMap;
 @Accessors(chain = true)
 public class AliveRoom {
 
-    public Long roomId;
+    private Long roomId;
 
-    public RoomType roomType;
+    private RoomType roomType;
 
-    public int minPlayNum = 3;
+    private int minPlayNum = 3;
 
-    public int maxPlayNum = 6;
+    private int maxPlayNum = 6;
 
-    public RoomState state = RoomState.OPENED;
+    private Integer joinedIncr = 0;
 
-    public LinkedHashMap<Long, Participant> participantMap;
+    private RoomState state = RoomState.OPENED;
 
+    private LinkedHashMap<Long, Member> membersMap;
+
+    @Getter
+    @Setter
+    @Accessors(chain = true)
+    public static class Member {
+        private Long uid;
+
+        private Integer index;
+
+        private String nickname;
+
+        private String avatar;
+
+        private MemberState state;
+
+        private MemberEvent event;
+
+        private Long joinTime;
+
+        private Long lastStateChange;
+    }
+
+    public enum MemberState {
+        IDLE,
+        PLAYING,
+        IN_PLAY;
+
+        public static ParticipantState toParticipantState(MemberState memberState) {
+            switch (memberState) {
+                case IDLE:
+                    return ParticipantState.IDLE;
+                case IN_PLAY:
+                    return ParticipantState.IN_PLAY;
+                case PLAYING:
+                    return ParticipantState.PLAYING;
+                default:
+                    return ParticipantState.UNRECOGNIZED;
+            }
+        }
+    }
+
+    public enum MemberEvent {
+        NONE,
+        JOIN,
+        READY,
+        CANCEL_READY;
+
+        public static ParticipantEvent toParticipantEvent(MemberEvent memberState) {
+            switch (memberState) {
+                case NONE:
+                    return ParticipantEvent.NONE;
+                case JOIN:
+                    return ParticipantEvent.JOIN;
+                case READY:
+                    return ParticipantEvent.READY;
+                case CANCEL_READY:
+                    return ParticipantEvent.CANCEL_READY;
+                default:
+                    return ParticipantEvent.UNRECOGNIZED;
+            }
+        }
+    }
 
 }

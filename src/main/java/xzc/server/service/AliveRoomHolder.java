@@ -65,7 +65,7 @@ public class AliveRoomHolder {
                 .setRoomId(roomId)
                 .setRoomType(roomType)
                 .setState(RoomState.OPENED)
-                .setParticipantMap(new LinkedHashMap<>());
+                .setMembersMap(new LinkedHashMap<>());
         // 保存房间
         saveAliveRoom(aliveRoom);
         // TODO: 2022/2/20 保存到一个可选房间集合中，比如建一个zset，使用剩余座位数为score
@@ -78,13 +78,10 @@ public class AliveRoomHolder {
             @Override
             protected Void innerCall() throws Exception {
                 long joinTime = System.currentTimeMillis();
-                Participant participant = userInfoToParticipant(userInfo)
-                        .toBuilder()
-                        .setEvent(ParticipantEvent.JOIN)
-                        .setState(ParticipantState.IDLE).build();
-//                .setJoinTime(joinTime)
-//                .setLastStateChange(joinTime);
-                aliveRoom.getParticipantMap().put(participant.getUid(), participant);
+                AliveRoom.Member member = userInfoToMember(userInfo)
+                        .setEvent(AliveRoom.MemberEvent.JOIN)
+                        .setState(AliveRoom.MemberState.IDLE);
+                aliveRoom.getMembersMap().put(member.getUid(), member);
                 return null;
             }
         });
@@ -96,6 +93,14 @@ public class AliveRoomHolder {
                 .setNickname(userInfo.getNickname())
                 .setAvatar(userInfo.getAvatar())
                 .build();
+    }
+
+
+    public AliveRoom.Member userInfoToMember(UserInfo userInfo) {
+        return new AliveRoom.Member()
+                .setUid(userInfo.getUid())
+                .setNickname(userInfo.getNickname())
+                .setAvatar(userInfo.getAvatar());
     }
 
 

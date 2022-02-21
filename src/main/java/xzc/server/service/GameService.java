@@ -6,7 +6,7 @@ import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-import xzc.server.bean.Game;
+import xzc.server.bean.AliveGame;
 import xzc.server.constant.RedisKey;
 
 import java.util.NoSuchElementException;
@@ -31,13 +31,13 @@ public class GameService {
         return RedisKey.makeKey(RedisKey.GAME_LOCK, gameId);
     }
 
-    public Game getGame(Long gameId) {
-        return (Game) redisTemplate.opsForValue().get(getRoomKey(gameId));
+    public AliveGame getGame(Long gameId) {
+        return (AliveGame) redisTemplate.opsForValue().get(getRoomKey(gameId));
     }
 
-    public void saveGame(Game game) {
-        String roomKey = getRoomKey(game.getId());
-        redisTemplate.opsForValue().set(roomKey, game, 3, TimeUnit.DAYS);
+    public void saveGame(AliveGame aliveGame) {
+        String roomKey = getRoomKey(aliveGame.getId());
+        redisTemplate.opsForValue().set(roomKey, aliveGame, 3, TimeUnit.DAYS);
     }
 
 
@@ -66,13 +66,13 @@ public class GameService {
         }
 
         protected Long gameId;
-        protected Game game;
+        protected AliveGame aliveGame;
         protected Long operator;
 
-        //判断本次操作是否有修改，当true时，自动保存此aliveSession
+        // 判断本次操作是否有修改，当true时，自动保存此aliveGame
         protected boolean changed = true;
 
-        //默认抛出异常，如果不想抛异常，做忽略处理，则调用setIgnoreException置为true
+        // 默认抛出异常，如果不想抛异常，做忽略处理，则调用setIgnoreException置为true
         protected boolean ignoreException = false;
 
         public void setIgnoreException(boolean ignoreException) {
@@ -94,16 +94,16 @@ public class GameService {
             } finally {
                 if (changed) {
                     //保存修改后的aliveSession
-                    game.setLastChangeTime(System.currentTimeMillis());
-                    saveGame(game);
+                    aliveGame.setLastChangeTime(System.currentTimeMillis());
+                    saveGame(aliveGame);
                 }
             }
         }
 
         protected void beforeCall() throws Exception {
-            this.game = getGame(gameId);
+            this.aliveGame = getGame(gameId);
 
-            if (game == null) {
+            if (aliveGame == null) {
                 log.error("Can not find game: {}", gameId);
                 throw new NoSuchElementException("cannot find session " + gameId);
             }

@@ -5,19 +5,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import xzc.server.bean.AliveGame;
 import xzc.server.bean.AliveRoom;
-import xzc.server.bean.Gamer;
 import xzc.server.bean.UserInfo;
 import xzc.server.proto.*;
+import xzc.server.util.BeanConverter;
 
 import java.util.ArrayList;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 public class RoomService {
-
-    @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
 
     @Autowired
     private AliveRoomHolder aliveRoomHolder;
@@ -33,25 +33,25 @@ public class RoomService {
         // 通知客户端
         QuickJoinRoomResponse quickJoinRoomResponse = QuickJoinRoomResponse.newBuilder()
                 .setRoomId(aliveRoom.getRoomId())
-                .putAllParticipants(aliveRoom.getParticipantMap())
+                .putAllParticipants(aliveRoom.getMembersMap().values()
+                        .stream()
+                        .map(BeanConverter::member2Participant)
+                        .collect(Collectors.toMap(Participant::getUid, Function.identity())))
                 .build();
         XZCSignal xzcSignal = XZCSignal.newBuilder()
                 .setCommand(XZCCommand.QUICK_JOIN_ROOM_RESPONSE)
                 .setBody(Any.pack(quickJoinRoomResponse))
                 .build();
         // 通知房间内的其他成员
-        pushService.batchPushSignal(new ArrayList<>(aliveRoom.getParticipantMap().keySet()), xzcSignal);
+        pushService.batchPushSignal(new ArrayList<>(aliveRoom.getMembersMap().keySet()), xzcSignal);
     }
 
-
-    public Gamer userInfoToGamer(UserInfo userInfo) {
-
-        return new Gamer()
+    public AliveGame.Gamer userInfoToGamer(UserInfo userInfo) {
+        return new AliveGame.Gamer()
                 .setUid(userInfo.getUid())
                 .setNickname(userInfo.getNickname())
                 .setAvatar(userInfo.getAvatar());
     }
-
 
     public Participant userInfoToParticipant(UserInfo userInfo) {
         return Participant.newBuilder()
