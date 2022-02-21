@@ -1,7 +1,6 @@
 package xzc.server.service;
 
 import com.google.protobuf.Any;
-import com.google.protobuf.InvalidProtocolBufferException;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.AttributeKey;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +20,7 @@ public class XzcSignalService {
     @Autowired
     private RoomService roomService;
 
-    public void handleSignal(ChannelHandlerContext ctx, SignalMessage msg) throws InvalidProtocolBufferException {
+    public void handleSignal(ChannelHandlerContext ctx, SignalMessage msg) throws Exception {
 
         Any payload = msg.getPayload();
         if (payload.is(XZCSignal.class)) {

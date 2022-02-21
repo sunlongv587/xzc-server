@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import xzc.server.bean.AliveRoom;
 import xzc.server.bean.Gamer;
 import xzc.server.bean.UserInfo;
-import xzc.server.constant.RedisKey;
 import xzc.server.proto.*;
 
 import java.util.ArrayList;
@@ -26,18 +25,12 @@ public class RoomService {
     @Autowired
     private PushService pushService;
 
-    public void quickJoin(UserInfo userInfo, QuickJoinRoomRequest quickJoinRoomRequest) {
+    public void quickJoin(UserInfo userInfo, QuickJoinRoomRequest quickJoinRoomRequest) throws Exception {
         // 选择或者创建一个房间
         AliveRoom aliveRoom = aliveRoomHolder.getOrCreateRoom(quickJoinRoomRequest.getRoomType());
-        // TODO: 2022/2/15 加入房间
-        long joinTime = System.currentTimeMillis();
-        Participant participant = userInfoToParticipant(userInfo)
-                .toBuilder()
-                .setEvent(ParticipantEvent.JOIN)
-                .setState(ParticipantState.IDLE).build();
-//                .setJoinTime(joinTime)
-//                .setLastStateChange(joinTime);
-        aliveRoom.getParticipantMap().put(participant.getUid(), participant);
+        // 加入房间
+        aliveRoomHolder.join(aliveRoom, userInfo);
+        // 通知客户端
         QuickJoinRoomResponse quickJoinRoomResponse = QuickJoinRoomResponse.newBuilder()
                 .setRoomId(aliveRoom.getRoomId())
                 .putAllParticipants(aliveRoom.getParticipantMap())
