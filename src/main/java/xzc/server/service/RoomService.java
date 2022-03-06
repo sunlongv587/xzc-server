@@ -9,7 +9,6 @@ import xzc.server.bean.AliveGame;
 import xzc.server.bean.AliveRoom;
 import xzc.server.bean.UserInfo;
 import xzc.server.proto.*;
-import xzc.server.util.BeanConverter;
 
 import java.util.ArrayList;
 import java.util.function.Function;
@@ -40,6 +39,29 @@ public class RoomService {
                 .build();
         XZCSignal xzcSignal = XZCSignal.newBuilder()
                 .setCommand(XZCCommand.QUICK_JOIN_ROOM_RESPONSE)
+                .setBody(Any.pack(quickJoinRoomResponse))
+                .build();
+        // 通知房间内的其他成员
+        pushService.batchPushSignal(new ArrayList<>(aliveRoom.getMembersMap().keySet()), xzcSignal);
+    }
+
+    public void ready(UserInfo userInfo, ReadyRequest readyRequest) throws Exception {
+        // TODO: 2022/3/6 修改状态为已准备
+
+        // 选择或者创建一个房间
+        AliveRoom aliveRoom = aliveRoomHolder.getOrCreateRoom(readyRequest.getRoomType());
+        // 加入房间
+        aliveRoomHolder.ready(aliveRoom, userInfo);
+        // 通知客户端
+        QuickJoinRoomResponse quickJoinRoomResponse = QuickJoinRoomResponse.newBuilder()
+                .setRoomId(aliveRoom.getRoomId())
+                .putAllParticipants(aliveRoom.getMembersMap().values()
+                        .stream()
+                        .map(BeanConverter::member2Participant)
+                        .collect(Collectors.toMap(Participant::getUid, Function.identity())))
+                .build();
+        XZCSignal xzcSignal = XZCSignal.newBuilder()
+                .setCommand(XZCCommand.READY_RESPONSE)
                 .setBody(Any.pack(quickJoinRoomResponse))
                 .build();
         // 通知房间内的其他成员

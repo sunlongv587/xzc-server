@@ -6,7 +6,6 @@ import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-import xzc.server.bean.AliveRoom;
 import xzc.server.bean.UserInfo;
 import xzc.server.constant.RedisKey;
 import xzc.server.constant.RoomState;
@@ -86,6 +85,20 @@ public class AliveRoomHolder {
                         .setLastStateChange(joinTime);
                 aliveRoom.getMembersMap().put(member.getUid(), member);
                 aliveRoom.setJoinedIncr(joinedIncr);
+                return null;
+            }
+        });
+    }
+
+    public void ready(AliveRoom aliveRoom, UserInfo userInfo) throws Exception {
+        handleWithAliveRoomLock(aliveRoom.getRoomId(), new WithAliveRoomCallable<Void>(aliveRoom, userInfo.getUid()) {
+
+            @Override
+            protected Void innerCall() throws Exception {
+
+                AliveRoom.Member member = aliveRoom.getMembersMap().get(operator);
+                member.setEvent(xzc.server.bean.AliveRoom.MemberEvent.READY)
+                        .setState(xzc.server.bean.AliveRoom.MemberState.PLAYING);
                 return null;
             }
         });

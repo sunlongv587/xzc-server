@@ -26,6 +26,7 @@ public class WebsocketServerHandler extends SimpleChannelInboundHandler<SignalMe
 
     /**
      * 取消绑定
+     *
      * @param ctx
      * @throws Exception
      */
@@ -38,6 +39,7 @@ public class WebsocketServerHandler extends SimpleChannelInboundHandler<SignalMe
 
     /**
      * 心跳检查
+     *
      * @param ctx
      * @param evt
      * @throws Exception
@@ -64,7 +66,8 @@ public class WebsocketServerHandler extends SimpleChannelInboundHandler<SignalMe
     }
 
     /**
-     * 读到客户端的内容 （这里只做心跳检查）
+     * 读到客户端的内容
+     *
      * @param ctx
      * @param msg
      * @throws Exception
@@ -90,7 +93,6 @@ public class WebsocketServerHandler extends SimpleChannelInboundHandler<SignalMe
             default:
                 log.info("未知类型");
         }
-
     }
 
     private void echo(ChannelHandlerContext ctx, SignalMessage msg) {

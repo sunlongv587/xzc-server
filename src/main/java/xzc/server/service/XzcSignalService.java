@@ -49,6 +49,7 @@ public class XzcSignalService {
                         UserInfo userInfo = (UserInfo) ctx.channel().attr(AttributeKey.valueOf("userInfo")).get();
                         roomService.quickJoin(userInfo, quickJoinRoomRequest);
                     }
+                case READY_REQUEST:
 
                 default:
                     break;

@@ -42,13 +42,13 @@ public class AliveGameHolder {
 
 
 
-    public <T> T handleWithSessionLock(long sessionId, Callable<T> handleImpl) throws Exception{
-        RLock sLock = redissonClient.getLock(getGameLockKey(sessionId));
+    public <T> T handleWithGameLock(long gameId, Callable<T> handleImpl) throws Exception{
+        RLock sLock = redissonClient.getLock(getGameLockKey(gameId));
         long timeout = 5000L;
         if (!sLock.tryLock(timeout, timeout,TimeUnit.MILLISECONDS)) {
             //that should not happen.
-            log.warn("Try get session lock timeout. {}",sessionId);
-            throw new RuntimeException("Get session lock timeout. Please try again");
+            log.warn("Try get alive game lock timeout. {}",gameId);
+            throw new RuntimeException("Get alive game lock timeout. Please try again");
         }
         try {
             T res = handleImpl.call();
@@ -85,7 +85,7 @@ public class AliveGameHolder {
                 beforeCall();
                 return innerCall();
             } catch (Exception e) {
-                //一旦发生异常，不保存session
+                //一旦发生异常，不保存
                 changed = false;
                 if (ignoreException) {
                     log.warn("Handle game: {} operate is exception，ignore this：{}！", gameId, e);
@@ -93,7 +93,7 @@ public class AliveGameHolder {
                 return null;
             } finally {
                 if (changed) {
-                    //保存修改后的aliveSession
+                    //保存修改后的aliveGame
                     aliveGame.setLastChangeTime(System.currentTimeMillis());
                     saveGame(aliveGame);
                 }
