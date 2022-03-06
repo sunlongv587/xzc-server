@@ -9,14 +9,14 @@ import java.util.concurrent.Callable;
 public abstract class WithRoomCallable<T> implements Callable<T> {
 
 
-    public WithRoomCallable(Long sessionId, Long operator) {
+    public WithRoomCallable(Long roomId, Long operator) {
         this.operator = operator;
 //        this.aliveSessionHandler = aliveSessionHandler;
-        this.sessionId = sessionId;
+        this.roomId = roomId;
     }
 
-    protected Long sessionId;
-    protected AliveRoom aliveSession;
+    protected Long roomId;
+    protected AliveRoom aliveRoom;
     protected Long operator;
 //    protected Permission permission;
 //    protected AliveSessionHandler aliveSessionHandler;
@@ -40,7 +40,7 @@ public abstract class WithRoomCallable<T> implements Callable<T> {
             //一旦发生异常，不保存session
             change = false;
             if (ignoreException) {
-                log.info("处理{}课堂session 发生异常，忽略此异常内容：{}！", sessionId, e.getMessage());
+                log.info("Handle room is exception, room id：{}！", roomId, e);
                 return null;
             } else {
                 throw e;
@@ -55,25 +55,7 @@ public abstract class WithRoomCallable<T> implements Callable<T> {
     }
 
     protected void beforeCall() throws Exception {
-//        aliveSession = aliveSessionHandler.isFinishedSession(sessionId);
-//        // 判定权限，permission 为空不需要判定。
-//        if (permission != null && operator != null) {
-//            List<AliveSession.Members> alivedList = aliveSession.getAlivedList();
-//            if (!alivedList.stream().map(AliveSession.Members::getUid).collect(Collectors.toList()).contains(operator)) {
-//                throw new NeukoException(ErrorCode.NOT_IN_MEETING);
-//            }
-//            Optional<AliveSession.Members> memberOptional = alivedList.stream().filter(e -> operator.equals(e.getUid())).findFirst();
-//            if (memberOptional.isPresent() && memberOptional.get().getRoleEnum() != null) {
-//                boolean match = memberOptional.get().getRoleEnum().getPermissionSet().contains(permission);
-//                if (!match) {
-//                    log.info("用户: {}, 没有权限操作: {}，Session: {}", operator, permission, aliveSession.getSessionId());
-//                    throw new NeukoException(ErrorCode.UNAUTHORIZED_OPERATION);
-//                }
-//            } else {
-//                log.info("用户: {}, 没有权限操作: {}，Session: {}", operator, permission, aliveSession.getSessionId());
-//                throw new NeukoException(ErrorCode.UNAUTHORIZED_OPERATION);
-//            }
-//        }
+
     }
 
     protected abstract T innerCall() throws Exception;

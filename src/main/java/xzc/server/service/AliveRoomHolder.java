@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import xzc.server.bean.UserInfo;
+import xzc.server.bean.AliveRoom;
 import xzc.server.constant.RedisKey;
 import xzc.server.constant.RoomState;
 import xzc.server.proto.Participant;
@@ -90,16 +91,16 @@ public class AliveRoomHolder {
         });
     }
 
-    public void ready(AliveRoom aliveRoom, UserInfo userInfo) throws Exception {
-        handleWithAliveRoomLock(aliveRoom.getRoomId(), new WithAliveRoomCallable<Void>(aliveRoom, userInfo.getUid()) {
+    public AliveRoom ready(Long roomId, UserInfo userInfo) throws Exception {
+        return handleWithAliveRoomLock(roomId, new WithAliveRoomCallable<AliveRoom>(roomId, userInfo.getUid()) {
 
             @Override
-            protected Void innerCall() throws Exception {
+            protected AliveRoom innerCall() throws Exception {
 
                 AliveRoom.Member member = aliveRoom.getMembersMap().get(operator);
-                member.setEvent(xzc.server.bean.AliveRoom.MemberEvent.READY)
-                        .setState(xzc.server.bean.AliveRoom.MemberState.PLAYING);
-                return null;
+                member.setEvent(AliveRoom.MemberEvent.READY)
+                        .setState(AliveRoom.MemberState.PLAYING);
+                return aliveRoom;
             }
         });
     }

@@ -4,7 +4,6 @@ import xzc.server.bean.AliveRoom;
 import xzc.server.proto.Participant;
 
 public class BeanConverter {
-
     public static Participant member2Participant(AliveRoom.Member member) {
         return Participant
                 .newBuilder()
@@ -15,5 +14,4 @@ public class BeanConverter {
                 .setState(AliveRoom.MemberState.toParticipantState(member.getState()))
                 .build();
     }
-
 }
