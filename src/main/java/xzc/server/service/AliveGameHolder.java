@@ -89,8 +89,10 @@ public class AliveGameHolder {
                 changed = false;
                 if (ignoreException) {
                     log.warn("Handle game: {} operate is exception，ignore this：{}！", gameId, e);
+                    return null;
+                }else {
+                    throw e;
                 }
-                return null;
             } finally {
                 if (changed) {
                     //保存修改后的aliveGame

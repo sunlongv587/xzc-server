@@ -18,8 +18,15 @@ import java.util.stream.Collectors;
 @Slf4j
 public class RoomService {
 
+    public static final int MIN_START_NUM = 3;
+
+    public static final int MAX_START_NUM = 6;
+
     @Autowired
     private AliveRoomHolder aliveRoomHolder;
+
+    @Autowired
+    private GameService gameService;
 
     @Autowired
     private PushService pushService;
@@ -50,7 +57,7 @@ public class RoomService {
     public void ready(UserInfo userInfo, ReadyRequest readyRequest) throws Exception {
         // 加入房间
         long roomId = readyRequest.getRoomId();
-        AliveRoom aliveRoom = aliveRoomHolder.ready(roomId, userInfo);
+        AliveRoom aliveRoom = aliveRoomHolder.ready(roomId, userInfo, readyRequest.getReadyOrCancel());
         // 通知客户端
         ReadyResponse readyResponse = ReadyResponse.newBuilder()
                 .setRoomId(roomId)
@@ -65,6 +72,36 @@ public class RoomService {
                 .build();
         // 通知房间内的其他成员
         pushService.batchPushSignal(new ArrayList<>(aliveRoom.getMembersMap().keySet()), xzcSignal);
+    }
+
+    /**
+     * 开始游戏
+     *
+     * @param userInfo
+     * @param startRequest
+     * @throws Exception
+     */
+    public void start(UserInfo userInfo, StartRequest startRequest) throws Exception {
+        long roomId = startRequest.getRoomId();
+        // 修改房间状态
+        AliveRoom aliveRoom = aliveRoomHolder.start(roomId, userInfo.getUid());
+        // TODO: 2022/3/9 创建游戏并加入
+        AliveGame aliveGame = gameService.create(aliveRoom.getMembersMap());
+        // TODO: 2022/3/9 回复玩家，
+        // todo 通知其他所有玩家
+    }
+
+    /**
+     * 退出房间
+     *
+     * @param userInfo
+     * @param quitRequest
+     * @throws Exception
+     */
+    public void quit(UserInfo userInfo, QuitRequest quitRequest) throws Exception {
+        long roomId = quitRequest.getRoomId();
+        // 修改房间状态
+        AliveRoom aliveRoom = aliveRoomHolder.quit(roomId, userInfo.getUid());
     }
 
     public AliveGame.Gamer userInfoToGamer(UserInfo userInfo) {

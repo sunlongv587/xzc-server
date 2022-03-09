@@ -14,6 +14,7 @@ import xzc.server.proto.Participant;
 import xzc.server.proto.RoomType;
 
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -53,7 +54,9 @@ public class AliveRoomHolder {
     }
 
     public AliveRoom getOrCreateRoom(RoomType roomType) {
-        // todo 获取或者创建一个可用的房间
+        // todo 获取一个可用的房间
+
+        // 创建新房间
         return createRoom(roomType);
     }
 
@@ -75,6 +78,9 @@ public class AliveRoomHolder {
 
             @Override
             protected Void innerCall() throws Exception {
+                if (aliveRoom.getMembersMap().size() > aliveRoom.getMaxPlayNum()) {
+                    throw new RuntimeException("房间已满");
+                }
                 long joinTime = System.currentTimeMillis();
 
                 Integer joinedIncr = aliveRoom.getJoinedIncr();
@@ -86,20 +92,62 @@ public class AliveRoomHolder {
                         .setLastStateChange(joinTime);
                 aliveRoom.getMembersMap().put(member.getUid(), member);
                 aliveRoom.setJoinedIncr(joinedIncr);
+
+                // TODO: 2022/3/9 从可选房间列表中为该房间减少一个座位并判断是否需要移除
                 return null;
             }
         });
     }
 
-    public AliveRoom ready(Long roomId, UserInfo userInfo) throws Exception {
+    public AliveRoom ready(Long roomId, UserInfo userInfo, boolean readyOrCancel) throws Exception {
         return handleWithAliveRoomLock(roomId, new WithAliveRoomCallable<AliveRoom>(roomId, userInfo.getUid()) {
 
             @Override
             protected AliveRoom innerCall() throws Exception {
                 // 修改状态为已准备
                 AliveRoom.Member member = aliveRoom.getMembersMap().get(operator);
-                member.setEvent(AliveRoom.MemberEvent.READY)
-                        .setState(AliveRoom.MemberState.PLAYING);
+                member.setEvent(readyOrCancel ? AliveRoom.MemberEvent.READY : AliveRoom.MemberEvent.CANCEL_READY)
+                        .setState(readyOrCancel ? AliveRoom.MemberState.PLAYING : AliveRoom.MemberState.IDLE);
+                return aliveRoom;
+            }
+        });
+    }
+
+    public AliveRoom start(Long roomId, Long uid) throws Exception {
+        return handleWithAliveRoomLock(roomId, new WithAliveRoomCallable<AliveRoom>(roomId, uid) {
+
+            @Override
+            protected AliveRoom innerCall() throws Exception {
+                // 判断房间人数是否满足条件
+                LinkedHashMap<Long, AliveRoom.Member> membersMap = aliveRoom.getMembersMap();
+                // 修改状态为游戏中
+                for (Map.Entry<Long, AliveRoom.Member> entry : membersMap.entrySet()) {
+                    AliveRoom.Member member = entry.getValue();
+                    if (member.getState() != AliveRoom.MemberState.PLAYING) {
+                        throw new RuntimeException("有玩家没准备或游戏中，uid" + entry.getKey() + "state:" + member.getState());
+                    }
+                    member.setEvent(AliveRoom.MemberEvent.START)
+                            .setState(AliveRoom.MemberState.IN_PLAY);
+                }
+                // TODO: 2022/3/9 从可选房间列表中将该房间移除（可能不存在）
+                return aliveRoom;
+            }
+        });
+    }
+
+    public AliveRoom quit(Long roomId, Long uid) throws Exception {
+        return handleWithAliveRoomLock(roomId, new WithAliveRoomCallable<AliveRoom>(roomId, uid) {
+
+            @Override
+            protected AliveRoom innerCall() throws Exception {
+                LinkedHashMap<Long, AliveRoom.Member> membersMap = aliveRoom.getMembersMap();
+                if (membersMap == null
+                        || membersMap.get(operator) == null
+                        || membersMap.get(operator).getState() != AliveRoom.MemberState.IDLE) {
+                    throw new RuntimeException("玩家不在Idle状态，" + operator);
+                }
+                membersMap.remove(operator);
+                // TODO: 2022/3/9 从可选房间列表中为该房间新增座位或添加（可能不存在）
                 return aliveRoom;
             }
         });
@@ -122,18 +170,18 @@ public class AliveRoomHolder {
     }
 
 
-    public <T> T handleWithAliveRoomLock(long roomId, Callable<T> handleImpl) throws Exception{
+    public <T> T handleWithAliveRoomLock(long roomId, Callable<T> handleImpl) throws Exception {
         RLock lock = redissonClient.getLock(getAliveRoomLockKey(roomId));
         long timeout = 5000L;
         if (!lock.tryLock(timeout, timeout, TimeUnit.MILLISECONDS)) {
             //that should not happen.
-            log.warn("Try get session lock timeout. {}",roomId);
+            log.warn("Try get session lock timeout. {}", roomId);
             throw new RuntimeException("Get session lock timeout. Please try again");
         }
         try {
             // todo 使用线程池
             return handleImpl.call();
-        }finally {
+        } finally {
             lock.unlockAsync();
         }
     }
@@ -179,11 +227,13 @@ public class AliveRoomHolder {
                 changed = false;
                 if (ignoreException) {
                     log.warn("Handle alive room: {} operate is exception，ignore this：{}！", roomId, e);
+                    return null;
+                } else {
+                    throw e;
                 }
-                return null;
             } finally {
                 if (changed) {
-                    //保存修改后的aliveSession
+                    // 保存修改后的aliveRoom
                     aliveRoom.setLastChangeTime(System.currentTimeMillis());
                     saveAliveRoom(aliveRoom);
                 }

@@ -75,7 +75,9 @@ public class AliveRoom {
         NONE,
         JOIN,
         READY,
-        CANCEL_READY;
+        CANCEL_READY,
+        START,
+        QUIT;
 
         public static ParticipantEvent toParticipantEvent(MemberEvent memberState) {
             switch (memberState) {

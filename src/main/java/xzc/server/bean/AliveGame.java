@@ -24,7 +24,7 @@ public class AliveGame {
     /**
      * 起始玩家，上一局的winner, 首轮是第一个加入房间的玩家
      */
-    private Integer startingGamer;
+    private Long startingGamer;
     /**
      * 本轮玩家的行动顺序，每到新的一轮都会更换起始玩家
      */
@@ -68,7 +68,7 @@ public class AliveGame {
         /**
          * 筹码数，初始每人4个
          */
-        private Integer coins;
+        private Integer coins = 4;
 
         private Long joinTime;
 
