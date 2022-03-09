@@ -96,7 +96,7 @@ public class AliveRoomHolder {
 
             @Override
             protected AliveRoom innerCall() throws Exception {
-
+                // 修改状态为已准备
                 AliveRoom.Member member = aliveRoom.getMembersMap().get(operator);
                 member.setEvent(AliveRoom.MemberEvent.READY)
                         .setState(AliveRoom.MemberState.PLAYING);
@@ -131,6 +131,7 @@ public class AliveRoomHolder {
             throw new RuntimeException("Get session lock timeout. Please try again");
         }
         try {
+            // todo 使用线程池
             return handleImpl.call();
         }finally {
             lock.unlockAsync();
@@ -158,7 +159,7 @@ public class AliveRoomHolder {
         protected AliveRoom aliveRoom;
         protected Long operator;
 
-        //判断本次操作是否有修改，当true时，自动保存此aliveSession
+        //判断本次操作是否有修改，当true时，自动保存此aliveRoom
         protected boolean changed = true;
 
         //默认抛出异常，如果不想抛异常，做忽略处理，则调用setIgnoreException置为true

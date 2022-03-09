@@ -15,11 +15,7 @@ public class IdService {
     private SnowflakeIdWorker snowflakeIdWorker;
 
     public long snowflakeNextId() throws RuntimeException {
-        long nextId = snowflakeIdWorker.nextId();
-//        if (ThreadLocalRandom.current().nextLong() % 1000 == 0) {
-//            log.info("generate nextId: {}.", nextId);
-//        }
-        return nextId;
+        return snowflakeIdWorker.nextId();
     }
 
     public long[] snowflakeNextIds(int count) throws RuntimeException {

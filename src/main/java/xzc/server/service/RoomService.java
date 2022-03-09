@@ -41,12 +41,13 @@ public class RoomService {
                 .setCommand(XZCCommand.QUICK_JOIN_ROOM_RESPONSE)
                 .setBody(Any.pack(quickJoinRoomResponse))
                 .build();
+        pushService.pushSignal(userInfo.getUid(), xzcSignal);
         // 通知房间内的其他成员
         pushService.batchPushSignal(new ArrayList<>(aliveRoom.getMembersMap().keySet()), xzcSignal);
+
     }
 
     public void ready(UserInfo userInfo, ReadyRequest readyRequest) throws Exception {
-        // TODO: 2022/3/6 修改状态为已准备
         // 加入房间
         long roomId = readyRequest.getRoomId();
         AliveRoom aliveRoom = aliveRoomHolder.ready(roomId, userInfo);

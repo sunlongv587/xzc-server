@@ -15,9 +15,9 @@ public class RedisKey {
      */
     public static final String OPTIONAL_ROOMS = "optional-rooms";
 
-    public static final String GAME = "game";
+    public static final String GAME = "alive-game";
 
-    public static final String GAME_LOCK = "game:lock";
+    public static final String GAME_LOCK = "alive-game:lock";
 
     public static String makeKey(Object... tokens) {
 
