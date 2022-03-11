@@ -16,6 +16,7 @@ import xzc.server.websocket.WebsocketHolder;
 import java.math.BigDecimal;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 @Service
@@ -24,51 +25,15 @@ public class AccountService {
     @Autowired
     private PushService pushService;
 
-    /**
-     * todo 固定测试用户，未接入真实登录之前，先用这几个用户测试
-     */
-    public static final Queue<UserInfo> TestUserQueue = new LinkedList<UserInfo>() {{
-        push(new UserInfo()
-                .setUid(1L)
-                .setNickname("zhangsan")
-                .setAvatar("")
-                .setBeans(new BigDecimal("100"))
-        );
-        push(new UserInfo()
-                .setUid(2L)
-                .setNickname("lisi")
-                .setAvatar("")
-                .setBeans(new BigDecimal("100"))
-        );
-        push(new UserInfo()
-                .setUid(3L)
-                .setNickname("wangwu")
-                .setAvatar("")
-                .setBeans(new BigDecimal("100"))
-        );
-        push(new UserInfo()
-                .setUid(4L)
-                .setNickname("zhaoliu")
-                .setAvatar("")
-                .setBeans(new BigDecimal("100"))
-        );
-        push(new UserInfo()
-                .setUid(5L)
-                .setNickname("liyu")
-                .setAvatar("")
-                .setBeans(new BigDecimal("100"))
-        );
-        push(new UserInfo()
-                .setUid(6L)
-                .setNickname("sunlong")
-                .setAvatar("")
-                .setBeans(new BigDecimal("100"))
-        );
-    }};
+    public static volatile AtomicLong virtualUid = new AtomicLong(1);
 
     public void login(ChannelHandlerContext ctx, LoginRequest loginRequest) {
         // 根据登录请求获取用户信息， 昵称，ID，头像，资产等
-        UserInfo userInfo = TestUserQueue.poll();
+        String username = loginRequest.getUsername();
+        UserInfo userInfo = new UserInfo()
+                .setNickname(username)
+                .setAvatar("")
+                .setUid(virtualUid.addAndGet(1));
         ctx.channel().attr(AttributeKey.valueOf("userInfo")).set(userInfo);
         // 记录登录状态，将用户channel, 和用户信息记录到map中
         WebsocketHolder.put(userInfo.getUid(), ctx.channel());

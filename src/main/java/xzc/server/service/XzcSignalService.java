@@ -42,6 +42,7 @@ public class XzcSignalService {
                             UserInfo userInfo = (UserInfo) ctx.channel().attr(AttributeKey.valueOf("userInfo")).get();
                             roomService.quickJoin(userInfo, quickJoinRoomRequest);
                         }
+                        break;
                     case READY_REQUEST:
                         // 处理准备请求
                         if (body.is(ReadyRequest.class)) {
@@ -49,6 +50,7 @@ public class XzcSignalService {
                             UserInfo userInfo = (UserInfo) ctx.channel().attr(AttributeKey.valueOf("userInfo")).get();
                             roomService.ready(userInfo, readyRequest);
                         }
+                        break;
                     case START_REQUEST:
                         // 处理开始请求
                         if (body.is(StartRequest.class)) {
@@ -56,6 +58,7 @@ public class XzcSignalService {
                             UserInfo userInfo = (UserInfo) ctx.channel().attr(AttributeKey.valueOf("userInfo")).get();
                             roomService.start(userInfo, startRequest);
                         }
+                        break;
                     case QUIT_REQUEST:
                         // 处理退出请求
                         if (body.is(QuitRequest.class)) {
@@ -63,7 +66,9 @@ public class XzcSignalService {
                             UserInfo userInfo = (UserInfo) ctx.channel().attr(AttributeKey.valueOf("userInfo")).get();
                             roomService.quit(userInfo, quitRequest);
                         }
-
+                        break;
+                    case QUICK_CHANGE_REQUEST:
+                        // todo 快速更换房间
                     case LOGIN_RESPONSE:
                     case QUICK_JOIN_ROOM_RESPONSE:
                     case READY_RESPONSE:
