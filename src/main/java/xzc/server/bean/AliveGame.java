@@ -13,9 +13,7 @@ public class AliveGame {
     private Long id;
     // 牌库 每轮游戏自动洗牌
     private List<Card> cardHouse;
-    //牌库指针 到第几张牌
-    private Integer cardHousePointer = 0;
-    //第几轮（0-6）
+    // 第几轮（0-6）
     private Integer round = 0;
     /**
      * 总轮数
@@ -31,7 +29,7 @@ public class AliveGame {
     private List<Long> orderedGamerList;
     // 当前行动的玩家 id
     private Long curGamerId;
-    // 加入赌局的玩家
+    // 本轮加入赌局的玩家
     private List<Long> gambler;
     /**
      * 小早川牌
@@ -76,18 +74,18 @@ public class AliveGame {
     }
 
     public enum GamerState {
-        Idle,
         Waiting,
         InAction,
         Picking,
-        Betting,
-
+        InBet;
     }
 
     public enum GamerEvent {
         TakeCard,
+        DiscardCard,
+        ChangeXzcCard,
         Betting,
-
+        Pass;
     }
 
     /**

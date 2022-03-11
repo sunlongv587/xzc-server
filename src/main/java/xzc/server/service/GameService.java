@@ -32,8 +32,11 @@ public class GameService {
                 .collect(Collectors.toList());
         // 初始化一个game,
         AliveGame aliveGame = new AliveGame()
+                // 生成ID
+                .setId(idService.snowflakeNextId())
                 // 洗牌
                 .setCardHouse(CardUtil.getCardHouse())
+                // 玩家序列
                 .setOrderedGamerList(memberIds)
                 // 起始玩家
                 .setStartingGamer(memberIds.get(0))

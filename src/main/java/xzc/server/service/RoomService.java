@@ -85,9 +85,18 @@ public class RoomService {
         long roomId = startRequest.getRoomId();
         // 修改房间状态
         AliveRoom aliveRoom = aliveRoomHolder.start(roomId, userInfo.getUid());
-        // TODO: 2022/3/9 创建游戏并加入
+        // 创建游戏并加入
         AliveGame aliveGame = gameService.create(aliveRoom.getMembersMap());
-        // TODO: 2022/3/9 回复玩家，
+        // 回复玩家，
+        StartResponse startResponse = StartResponse.newBuilder()
+                .setRoomId(aliveRoom.getRoomId())
+                .setGameId(aliveGame.getId())
+                .build();
+        XZCSignal xzcSignal = XZCSignal.newBuilder()
+                .setCommand(XZCCommand.READY_RESPONSE)
+                .setBody(Any.pack(startResponse))
+                .build();
+        pushService.pushSignal(userInfo.getUid(), xzcSignal);
         // todo 通知其他所有玩家
     }
 
@@ -102,6 +111,15 @@ public class RoomService {
         long roomId = quitRequest.getRoomId();
         // 修改房间状态
         AliveRoom aliveRoom = aliveRoomHolder.quit(roomId, userInfo.getUid());
+        QuitResponse quitResponse = QuitResponse.newBuilder()
+                .setRoomId(aliveRoom.getRoomId())
+                .build();
+        XZCSignal xzcSignal = XZCSignal.newBuilder()
+                .setCommand(XZCCommand.QUIT_RESPONSE)
+                .setBody(Any.pack(quitResponse))
+                .build();
+        pushService.pushSignal(userInfo.getUid(), xzcSignal);
+        // todo 通知其他所有玩家
     }
 
     public AliveGame.Gamer userInfoToGamer(UserInfo userInfo) {
