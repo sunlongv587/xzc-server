@@ -33,6 +33,7 @@ public class AccountService {
         UserInfo userInfo = new UserInfo()
                 .setNickname(username)
                 .setAvatar("")
+                .setBeans(new BigDecimal("10000"))
                 .setUid(virtualUid.addAndGet(1));
         ctx.channel().attr(AttributeKey.valueOf("userInfo")).set(userInfo);
         // 记录登录状态，将用户channel, 和用户信息记录到map中

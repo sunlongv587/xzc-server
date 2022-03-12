@@ -18,7 +18,11 @@ public class PushService {
 
     public void pushMessage(Long uid, SignalMessage message) {
         Channel channel = WebsocketHolder.get(uid);
-        channel.writeAndFlush(message);
+        if (channel != null && channel.isActive()) {
+            channel.writeAndFlush(message);
+        } else {
+            log.warn("用户离线，uid: {}", uid);
+        }
     }
 
     public void batchPushMessage(List<Long> uids, SignalMessage message) {

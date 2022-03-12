@@ -1,11 +1,13 @@
 package xzc.server.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import xzc.server.bean.UserInfo;
 import xzc.server.bean.AliveRoom;
 import xzc.server.constant.RedisKey;
@@ -14,6 +16,7 @@ import xzc.server.proto.Participant;
 import xzc.server.proto.RoomType;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
@@ -32,6 +35,9 @@ public class AliveRoomHolder {
     @Autowired
     private IdService idService;
 
+    @Autowired
+    private OptionalRoomCache optionalRoomCache;
+
     public String getAliveRoomKey(Long roomId) {
         return RedisKey.makeKey(RedisKey.ALIVE_ROOM, roomId);
     }
@@ -48,38 +54,93 @@ public class AliveRoomHolder {
         return (AliveRoom) redisTemplate.opsForValue().get(getAliveRoomKey(roomId));
     }
 
-    // TODO: 2022/2/16 维护可使用的房间
     public void saveAliveRoom(AliveRoom aliveRoom) {
         redisTemplate.opsForValue().set(getAliveRoomKey(aliveRoom.getRoomId()), aliveRoom);
     }
 
     public AliveRoom getOrCreateRoom(RoomType roomType) {
-        // todo 获取一个可用的房间
-
-        // 创建新房间
-        return createRoom(roomType);
+        // 获取一个可用的房间
+        List<Pair<Long, Integer>> list = optionalRoomCache.getList(roomType);
+        if (CollectionUtils.isEmpty(list)) {
+            // 创建新房间
+            return createRoom(roomType);
+        }
+        // 选第一个
+        return getAliveRoom(list.get(0).getLeft());
     }
 
-    public AliveRoom createRoom(RoomType roomType) {
+    public AliveRoom getAndJoinRoomRetry(RoomType roomType, UserInfo userInfo, int retryTime) {
+        // 获取一个可用的房间
+        List<Pair<Long, Integer>> list = optionalRoomCache.getList(roomType);
+        if (CollectionUtils.isEmpty(list)) {
+            return null;
+        }
+        for (int i = 0; i < list.size() && i < retryTime; i++) {
+            Pair<Long, Integer> pair = list.get(i);
+            try {
+                AliveRoom aliveRoom = join(pair.getLeft(), userInfo);
+                // 从可选房间列表中为该房间减少一个座位并判断是否需要移除
+                if (aliveRoom.getMaxPlayNum() == aliveRoom.getMembersMap().size()) {
+                    optionalRoomCache.remove(aliveRoom.getRoomType(), aliveRoom.getRoomId());
+                } else {
+                    optionalRoomCache.decr(aliveRoom.getRoomType(), aliveRoom.getRoomId());
+                }
+                return aliveRoom;
+            } catch (Exception e) {
+                // 加入失败，重试
+                log.warn("尝试加入失败，房间已满，重试，index: {}", i, e);
+            }
+        }
+        return null;
+    }
+
+    public AliveRoom createAndJoinRoom(RoomType roomType, UserInfo userInfo) throws Exception {
+        // 创建房间
+        AliveRoom room = createRoom(roomType);
+        // 加入房间
+        return firstJoin(room, userInfo);
+    }
+
+    private AliveRoom createRoom(RoomType roomType) {
         long roomId = idService.snowflakeNextId();
-        AliveRoom aliveRoom = new AliveRoom()
+        return new AliveRoom()
                 .setRoomId(roomId)
                 .setRoomType(roomType)
                 .setState(RoomState.OPENED)
                 .setMembersMap(new LinkedHashMap<>());
-        // 保存房间
+    }
+
+    public AliveRoom firstJoin(AliveRoom aliveRoom, UserInfo userInfo) throws Exception {
+        long joinTime = System.currentTimeMillis();
+
+        Long roomId = aliveRoom.getRoomId();
+        // 递增
+        Integer joinedIncr = aliveRoom.getJoinedIncr();
+        AliveRoom.Member member = userInfoToMember(userInfo)
+                .setIndex(joinedIncr++)
+                .setEvent(AliveRoom.MemberEvent.JOIN)
+                .setState(AliveRoom.MemberState.IDLE)
+                .setJoinTime(joinTime)
+                .setLastStateChange(joinTime);
+        aliveRoom.getMembersMap().put(member.getUid(), member);
+        aliveRoom.setJoinedIncr(joinedIncr);
+
         saveAliveRoom(aliveRoom);
-        // TODO: 2022/2/20 保存到一个可选房间集合中，比如建一个zset，使用剩余座位数为score
+        // 保存到一个可选房间集合中，比如建一个zset，使用剩余座位数为score
+        optionalRoomCache.add(aliveRoom.getRoomType(), roomId, aliveRoom.getMaxPlayNum() - 1);
         return aliveRoom;
     }
 
-    public void join(AliveRoom aliveRoom, UserInfo userInfo) throws Exception {
-        handleWithAliveRoomLock(aliveRoom.getRoomId(), new WithAliveRoomCallable<Void>(aliveRoom, userInfo.getUid()) {
+    public AliveRoom join(Long roomId, UserInfo userInfo) throws Exception {
+        return handleWithAliveRoomLock(roomId, new WithAliveRoomCallable<AliveRoom>(roomId, userInfo.getUid()) {
 
             @Override
-            protected Void innerCall() throws Exception {
+            protected AliveRoom innerCall() throws Exception {
                 if (aliveRoom.getMembersMap().size() > aliveRoom.getMaxPlayNum()) {
                     throw new RuntimeException("房间已满");
+                }
+                if (aliveRoom.getState() != RoomState.OPENED) {
+                    throw new RuntimeException("房间已不存在");
                 }
                 long joinTime = System.currentTimeMillis();
 
@@ -93,8 +154,7 @@ public class AliveRoomHolder {
                 aliveRoom.getMembersMap().put(member.getUid(), member);
                 aliveRoom.setJoinedIncr(joinedIncr);
 
-                // TODO: 2022/3/9 从可选房间列表中为该房间减少一个座位并判断是否需要移除
-                return null;
+                return aliveRoom;
             }
         });
     }
@@ -129,7 +189,7 @@ public class AliveRoomHolder {
                     member.setEvent(AliveRoom.MemberEvent.START)
                             .setState(AliveRoom.MemberState.IN_PLAY);
                 }
-                // TODO: 2022/3/9 从可选房间列表中将该房间移除（可能不存在）
+                aliveRoom.setState(RoomState.IN_GAME);
                 return aliveRoom;
             }
         });
@@ -147,7 +207,9 @@ public class AliveRoomHolder {
                     throw new RuntimeException("玩家不在Idle状态，" + operator);
                 }
                 membersMap.remove(operator);
-                // TODO: 2022/3/9 从可选房间列表中为该房间新增座位或添加（可能不存在）
+                if (membersMap.size() == 0) {
+                    aliveRoom.setState(RoomState.CLOSED);
+                }
                 return aliveRoom;
             }
         });

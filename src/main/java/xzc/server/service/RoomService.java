@@ -31,11 +31,21 @@ public class RoomService {
     @Autowired
     private PushService pushService;
 
+    @Autowired
+    private OptionalRoomCache optionalRoomCache;
+
     public void quickJoin(UserInfo userInfo, QuickJoinRoomRequest quickJoinRoomRequest) throws Exception {
-        // 选择或者创建一个房间
-        AliveRoom aliveRoom = aliveRoomHolder.getOrCreateRoom(quickJoinRoomRequest.getRoomType());
-        // 加入房间
-        aliveRoomHolder.join(aliveRoom, userInfo);
+        // 选择并加入一个房间
+        RoomType roomType = quickJoinRoomRequest.getRoomType();
+        AliveRoom aliveRoom = aliveRoomHolder.getAndJoinRoomRetry(roomType, userInfo, 5);
+        if (aliveRoom == null) {
+            // 加入房间
+            aliveRoom = aliveRoomHolder.createAndJoinRoom(roomType, userInfo);
+        }
+        if (aliveRoom == null) {
+            // todo 加入失败
+            throw new RuntimeException("加入失败");
+        }
         // 通知客户端
         QuickJoinRoomResponse quickJoinRoomResponse = QuickJoinRoomResponse.newBuilder()
                 .setRoomId(aliveRoom.getRoomId())
@@ -51,7 +61,6 @@ public class RoomService {
         pushService.pushSignal(userInfo.getUid(), xzcSignal);
         // 通知房间内的其他成员
         pushService.batchPushSignal(new ArrayList<>(aliveRoom.getMembersMap().keySet()), xzcSignal);
-
     }
 
     public void ready(UserInfo userInfo, ReadyRequest readyRequest) throws Exception {
@@ -85,6 +94,8 @@ public class RoomService {
         long roomId = startRequest.getRoomId();
         // 修改房间状态
         AliveRoom aliveRoom = aliveRoomHolder.start(roomId, userInfo.getUid());
+        // 从可选房间列表中将该房间移除（可能不存在）
+        optionalRoomCache.remove(aliveRoom.getRoomType(), roomId);
         // 创建游戏并加入
         AliveGame aliveGame = gameService.create(aliveRoom.getMembersMap());
         // 回复玩家，
@@ -111,6 +122,13 @@ public class RoomService {
         long roomId = quitRequest.getRoomId();
         // 修改房间状态
         AliveRoom aliveRoom = aliveRoomHolder.quit(roomId, userInfo.getUid());
+        // 从可选房间列表中为该房间新增座位或添加（可能不存在）
+        if (aliveRoom.getMembersMap().isEmpty()) {
+            // 房间内没有人了，释放这个room
+            optionalRoomCache.remove(aliveRoom.getRoomType(), roomId);
+        } else {
+            optionalRoomCache.incr(aliveRoom.getRoomType(), roomId);
+        }
         QuitResponse quitResponse = QuitResponse.newBuilder()
                 .setRoomId(aliveRoom.getRoomId())
                 .build();
