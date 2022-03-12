@@ -1,5 +1,6 @@
 package xzc.server.config;
 
+import com.alibaba.fastjson.support.spring.GenericFastJsonRedisSerializer;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,15 +36,15 @@ public class AppConfiguration {
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory redissonConnectionFactory) {
         RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redissonConnectionFactory);
-        Jackson2JsonRedisSerializer<?> jackson2JsonRedisSerializer = buildJackson2JsonRedisSerializer();
+        GenericFastJsonRedisSerializer fastJsonRedisSerializer = new GenericFastJsonRedisSerializer();
         //设置键（key）的序列化方式
         redisTemplate.setKeySerializer(new StringRedisSerializer());
         //设置值（value）的序列化方式
-        redisTemplate.setValueSerializer(jackson2JsonRedisSerializer);
+        redisTemplate.setValueSerializer(fastJsonRedisSerializer);
 
         // 设置 Hash 的 序列化方式
         redisTemplate.setHashKeySerializer(new StringRedisSerializer());
-        redisTemplate.setHashValueSerializer(jackson2JsonRedisSerializer);
+        redisTemplate.setHashValueSerializer(fastJsonRedisSerializer);
 
         redisTemplate.afterPropertiesSet();
         return redisTemplate;
