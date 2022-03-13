@@ -10,6 +10,8 @@ import xzc.server.bean.UserInfo;
 import xzc.server.exception.XZCException;
 import xzc.server.proto.*;
 
+import java.util.Map;
+
 
 @Slf4j
 @Service
@@ -86,14 +88,16 @@ public class XzcSignalService {
             }
         } catch (XZCException exception) {
             log.warn("处理信令异常，", exception);
-            ErrorResponse errorResponse = ErrorResponse.newBuilder()
+            Map<String, String> data = exception.getData();
+            ErrorResponse.Builder builder = ErrorResponse.newBuilder()
                     .setCode(exception.getErrorCode())
-                    .setMessage(exception.getMessage())
-                    .putAllData(exception.getData())
-                    .build();
+                    .setMessage(exception.getMessage());
+            if (data != null) {
+                builder.putAllData(data);
+            }
             XZCSignal xzcSignal = XZCSignal.newBuilder()
                     .setCommand(XZCCommand.ERROR_RESPONSE)
-                    .setBody(Any.pack(errorResponse))
+                    .setBody(Any.pack(builder.build()))
                     .build();
             pushService.pushSignal(ctx.channel(), xzcSignal);
         } catch (Exception e) {

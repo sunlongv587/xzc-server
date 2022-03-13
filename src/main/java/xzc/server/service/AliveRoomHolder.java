@@ -186,7 +186,7 @@ public class AliveRoomHolder {
                 for (Map.Entry<Long, AliveRoom.Member> entry : membersMap.entrySet()) {
                     AliveRoom.Member member = entry.getValue();
                     if (member.getState() != AliveRoom.MemberState.PLAYING) {
-                        throw new XZCException(ErrorCode.HAS_MEMBER_NOT_READY, "有玩家没准备或游戏中，uid" + entry.getKey() + "state:" + member.getState());
+                        throw new XZCException(ErrorCode.HAS_MEMBER_NOT_READY, "有玩家没准备或游戏中，uid: " + entry.getKey() + ", state: " + member.getState());
                     }
                     member.setEvent(AliveRoom.MemberEvent.START)
                             .setState(AliveRoom.MemberState.IN_PLAY);
