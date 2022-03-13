@@ -1,0 +1,45 @@
+package xzc.server.exception;
+
+import lombok.Getter;
+import xzc.server.proto.ErrorCode;
+
+import java.text.MessageFormat;
+import java.util.Map;
+
+public class XZCException extends RuntimeException {
+
+    @Getter
+    private ErrorCode errorCode;
+
+    @Getter
+    private Map<String, String> data;
+
+    private Object[] objects;
+
+    public XZCException(ErrorCode errorCode, String message) {
+        super(message);
+        this.errorCode = errorCode;
+    }
+
+    public XZCException(ErrorCode errorCode, String message, Map<String, String> data) {
+        super(message);
+        this.errorCode = errorCode;
+        this.data = data;
+    }
+
+    public XZCException(ErrorCode errorCode, String message, Map<String, String> data, Object... objects) {
+        this(errorCode, message);
+        this.data = data;
+        this.objects = objects;
+    }
+
+    @Override
+    public String getMessage() {
+        return MessageFormat.format(super.getMessage(), objects);
+    }
+
+    public int getCode() {
+        return this.errorCode.getNumber();
+    }
+
+}

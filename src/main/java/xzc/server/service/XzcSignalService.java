@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import xzc.server.bean.UserInfo;
+import xzc.server.exception.XZCException;
 import xzc.server.proto.*;
 
 
@@ -20,6 +21,9 @@ public class XzcSignalService {
     @Autowired
     private RoomService roomService;
 
+    @Autowired
+    private PushService pushService;
+
     public void handleSignal(ChannelHandlerContext ctx, SignalMessage msg) throws Exception {
 
         try {
@@ -28,7 +32,7 @@ public class XzcSignalService {
                 XZCSignal signal = payload.unpack(XZCSignal.class);
                 XZCCommand command = signal.getCommand();
                 Any body = signal.getBody();
-                switch(command) {
+                switch (command) {
                     case LOGIN_REQUEST:
                         if (body.is(LoginRequest.class)) {
                             LoginRequest loginRequest = body.unpack(LoginRequest.class);
@@ -76,17 +80,27 @@ public class XzcSignalService {
                         log.warn("忽略处理");
                         break;
 
-              default:
+                    default:
                         break;
                 }
             }
+        } catch (XZCException exception) {
+            log.warn("处理信令异常，", exception);
+            ErrorResponse errorResponse = ErrorResponse.newBuilder()
+                    .setCode(exception.getErrorCode())
+                    .setMessage(exception.getMessage())
+                    .putAllData(exception.getData())
+                    .build();
+            XZCSignal xzcSignal = XZCSignal.newBuilder()
+                    .setCommand(XZCCommand.ERROR_RESPONSE)
+                    .setBody(Any.pack(errorResponse))
+                    .build();
+            pushService.pushSignal(ctx.channel(), xzcSignal);
         } catch (Exception e) {
             log.warn("处理信令异常，", e);
         } finally {
         }
     }
-
-
 
 
 }

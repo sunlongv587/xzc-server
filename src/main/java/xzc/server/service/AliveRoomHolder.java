@@ -12,6 +12,8 @@ import xzc.server.bean.UserInfo;
 import xzc.server.bean.AliveRoom;
 import xzc.server.constant.RedisKey;
 import xzc.server.constant.RoomState;
+import xzc.server.exception.XZCException;
+import xzc.server.proto.ErrorCode;
 import xzc.server.proto.Participant;
 import xzc.server.proto.RoomType;
 
@@ -137,10 +139,10 @@ public class AliveRoomHolder {
             @Override
             protected AliveRoom innerCall() throws Exception {
                 if (aliveRoom.getMembersMap().size() > aliveRoom.getMaxPlayNum()) {
-                    throw new RuntimeException("房间已满");
+                    throw new XZCException(ErrorCode.ROOM_IS_FULL, "房间已满");
                 }
                 if (aliveRoom.getState() != RoomState.OPENED) {
-                    throw new RuntimeException("房间已不存在");
+                    throw new XZCException(ErrorCode.ROOM_IS_NOT_EXISTS, "房间已不存在");
                 }
                 long joinTime = System.currentTimeMillis();
 
@@ -184,7 +186,7 @@ public class AliveRoomHolder {
                 for (Map.Entry<Long, AliveRoom.Member> entry : membersMap.entrySet()) {
                     AliveRoom.Member member = entry.getValue();
                     if (member.getState() != AliveRoom.MemberState.PLAYING) {
-                        throw new RuntimeException("有玩家没准备或游戏中，uid" + entry.getKey() + "state:" + member.getState());
+                        throw new XZCException(ErrorCode.HAS_MEMBER_NOT_READY, "有玩家没准备或游戏中，uid" + entry.getKey() + "state:" + member.getState());
                     }
                     member.setEvent(AliveRoom.MemberEvent.START)
                             .setState(AliveRoom.MemberState.IN_PLAY);

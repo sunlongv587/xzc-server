@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import xzc.server.bean.AliveGame;
 import xzc.server.bean.AliveRoom;
 import xzc.server.bean.UserInfo;
+import xzc.server.exception.XZCException;
 import xzc.server.proto.*;
 import xzc.server.util.BeanConverter;
 
@@ -43,8 +44,7 @@ public class RoomService {
             aliveRoom = aliveRoomHolder.createAndJoinRoom(roomType, userInfo);
         }
         if (aliveRoom == null) {
-            // todo 加入失败
-            throw new RuntimeException("加入失败");
+            throw new XZCException(ErrorCode.QUICK_JOIN_FAILED, "加入失败");
         }
         // 通知客户端
         QuickJoinRoomResponse quickJoinRoomResponse = QuickJoinRoomResponse.newBuilder()

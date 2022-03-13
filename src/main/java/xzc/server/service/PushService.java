@@ -41,10 +41,35 @@ public class PushService {
         push(receiver, MessageType.SIGNAL, signal);
     }
 
+    public void pushSignal(Channel channel, XZCSignal signal) {
+        if (channel != null && channel.isActive()) {
+            channel.writeAndFlush(packSignal(signal));
+        } else {
+            log.warn("用户离线，uid: {}", channel);
+        }
+    }
+
     public void push(Long receiver, MessageType messageType, XZCSignal signal) {
+        pushMessage(receiver, packSignalWithType(messageType, signal));
+    }
+
+    public SignalMessage packSignal(XZCSignal signal) {
         String uuid = UUID.randomUUID().toString();
-        System.out.println("uuid: " + uuid);
-        SignalMessage signalMessage = SignalMessage.newBuilder()
+        log.info("uuid: {}", uuid);
+        return SignalMessage.newBuilder()
+                .setGameId(1)
+                .setTimestamp(System.currentTimeMillis())
+                .setMessageId(uuid)
+                .setType(MessageType.SIGNAL)
+                .setVersion("1.0")
+                .setPayload(Any.pack(signal))
+                .build();
+    }
+
+    public SignalMessage packSignalWithType(MessageType messageType, XZCSignal signal) {
+        String uuid = UUID.randomUUID().toString();
+        log.info("uuid: {}", uuid);
+        return SignalMessage.newBuilder()
                 .setGameId(1)
                 .setTimestamp(System.currentTimeMillis())
                 .setMessageId(uuid)
@@ -52,7 +77,6 @@ public class PushService {
                 .setVersion("1.0")
                 .setPayload(Any.pack(signal))
                 .build();
-        pushMessage(receiver, signalMessage);
     }
 
 }
