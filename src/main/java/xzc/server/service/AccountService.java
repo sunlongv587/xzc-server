@@ -6,6 +6,8 @@ import io.netty.util.AttributeKey;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+import xzc.server.bean.AliveGame;
 import xzc.server.bean.UserInfo;
 import xzc.server.proto.LoginRequest;
 import xzc.server.proto.LoginResponse;
@@ -14,8 +16,7 @@ import xzc.server.proto.XZCSignal;
 import xzc.server.websocket.WebsocketHolder;
 
 import java.math.BigDecimal;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
@@ -24,6 +25,12 @@ public class AccountService {
 
     @Autowired
     private PushService pushService;
+
+    @Autowired
+    private UserRelationCache userRelationCache;
+
+    @Autowired
+    private AliveGameHolder aliveGameHolder;
 
     public static volatile AtomicLong virtualUid = new AtomicLong(1);
 
@@ -55,6 +62,17 @@ public class AccountService {
                 .build();
         // 返回信息给客户端
         pushService.pushSignal(userInfo.getUid(), xzcSignal);
+        // todo 检查用户是否是中途掉线
+        Map<Object, Object> userRelation = userRelationCache.getUserRelation(userInfo.getUid());
+        if (!CollectionUtils.isEmpty(userRelation)) {
+            Object gameId = userRelation.get(UserRelationCache.GAME_ID);
+            if (gameId != null) {
+                AliveGame aliveGame = aliveGameHolder.getAliveGame((Long) gameId);
+                // TODO: 2022/3/13 判断游戏是否结束，如果没有结束就把当前的游戏进行状态信息发送给客户端。
+//                aliveGame.get
+            }
+        }
+
     }
 
 

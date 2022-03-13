@@ -35,6 +35,9 @@ public class RoomService {
     @Autowired
     private OptionalRoomCache optionalRoomCache;
 
+    @Autowired
+    private UserRelationCache userRelationCache;
+
     public void quickJoin(UserInfo userInfo, QuickJoinRoomRequest quickJoinRoomRequest) throws Exception {
         // 选择并加入一个房间
         RoomType roomType = quickJoinRoomRequest.getRoomType();
@@ -61,6 +64,8 @@ public class RoomService {
         pushService.pushSignal(userInfo.getUid(), xzcSignal);
         // 通知房间内的其他成员
         pushService.batchPushSignal(new ArrayList<>(aliveRoom.getMembersMap().keySet()), xzcSignal);
+        // 维护缓存
+        userRelationCache.onJoinRoom(userInfo.getUid(), aliveRoom.getRoomId());
     }
 
     public void ready(UserInfo userInfo, ReadyRequest readyRequest) throws Exception {
@@ -109,6 +114,7 @@ public class RoomService {
                 .build();
         pushService.pushSignal(userInfo.getUid(), xzcSignal);
         // todo 通知其他所有玩家
+        userRelationCache.onStartGame(userInfo.getUid(), aliveGame.getId());
     }
 
     /**
@@ -118,8 +124,7 @@ public class RoomService {
      * @param quitRequest
      * @throws Exception
      */
-    public void quit(UserInfo userInfo, QuitRequest quitRequest) throws Exception {
-        long roomId = quitRequest.getRoomId();
+    public void quit(UserInfo userInfo, Long roomId) throws Exception {
         // 修改房间状态
         AliveRoom aliveRoom = aliveRoomHolder.quit(roomId, userInfo.getUid());
         // 从可选房间列表中为该房间新增座位或添加（可能不存在）
@@ -138,6 +143,19 @@ public class RoomService {
                 .build();
         pushService.pushSignal(userInfo.getUid(), xzcSignal);
         // todo 通知其他所有玩家
+        userRelationCache.onQuitRoom(userInfo.getUid(), aliveRoom.getRoomId());
+    }
+
+    /**
+     * 退出房间
+     *
+     * @param userInfo
+     * @param quitRequest
+     * @throws Exception
+     */
+    public void quit(UserInfo userInfo, QuitRequest quitRequest) throws Exception {
+        long roomId = quitRequest.getRoomId();
+        quit(userInfo, roomId);
     }
 
     public AliveGame.Gamer userInfoToGamer(UserInfo userInfo) {

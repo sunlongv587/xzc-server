@@ -28,4 +28,8 @@ public class WebsocketHolder {
         CHANNEL_MAP.entrySet().stream().filter(entry -> entry.getValue() == channel).forEach(entry -> CHANNEL_MAP.remove(entry.getKey()));
     }
 
+    public static void removeById(Long uid) {
+        CHANNEL_MAP.remove(uid);
+    }
+
 }

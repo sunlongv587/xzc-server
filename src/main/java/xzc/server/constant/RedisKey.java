@@ -10,6 +10,8 @@ public class RedisKey {
 
     public static final String ALIVE_ROOM_LOCK = "alive-room:lock";
 
+    public static final String USER_RELATION = "user:relation";
+
     /**
      * zset member = roomId, score = 剩余座位数（Remaining seats）
      */

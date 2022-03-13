@@ -36,11 +36,13 @@ public class AliveGameHolder {
     }
 
     public void saveGame(AliveGame aliveGame) {
-        String roomKey = getGameKey(aliveGame.getId());
-        redisTemplate.opsForValue().set(roomKey, aliveGame, 3, TimeUnit.DAYS);
+        String gameKey = getGameKey(aliveGame.getId());
+        redisTemplate.opsForValue().set(gameKey, aliveGame, 3, TimeUnit.DAYS);
     }
 
-
+    public AliveGame getAliveGame(Long gameId) {
+        return (AliveGame) redisTemplate.opsForValue().get(getGameKey(gameId));
+    }
 
     public <T> T handleWithGameLock(long gameId, Callable<T> handleImpl) throws Exception{
         RLock sLock = redissonClient.getLock(getGameLockKey(gameId));

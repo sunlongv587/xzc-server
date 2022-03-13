@@ -11,8 +11,6 @@ import xzc.server.proto.MessageType;
 import xzc.server.proto.SignalMessage;
 import xzc.server.service.XzcSignalService;
 
-import java.io.IOException;
-
 @ChannelHandler.Sharable
 @Slf4j
 public class WebsocketServerHandler extends SimpleChannelInboundHandler<SignalMessage> {
@@ -34,7 +32,7 @@ public class WebsocketServerHandler extends SimpleChannelInboundHandler<SignalMe
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         // 可能出现业务判断离线后再次触发 channelInactive
         log.warn("触发 channelInactive 掉线![{}]", ctx.channel().id());
-        userOffLine(ctx);
+        xzcSignalService.handleOffline(ctx);
     }
 
     /**
@@ -51,19 +49,12 @@ public class WebsocketServerHandler extends SimpleChannelInboundHandler<SignalMe
             // 读空闲
             if (idleStateEvent.state() == IdleState.READER_IDLE) {
                 // 关闭用户的连接
-                userOffLine(ctx);
+                xzcSignalService.handleOffline(ctx);
             }
         }
         super.userEventTriggered(ctx, evt);
     }
 
-    /**
-     * 用户下线
-     */
-    private void userOffLine(ChannelHandlerContext ctx) throws IOException {
-        WebsocketHolder.remove(ctx.channel());
-        ctx.channel().close();
-    }
 
     /**
      * 读到客户端的内容

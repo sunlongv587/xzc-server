@@ -1,6 +1,7 @@
 package xzc.server.service;
 
 import com.google.protobuf.Any;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.AttributeKey;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 import xzc.server.bean.UserInfo;
 import xzc.server.exception.XZCException;
 import xzc.server.proto.*;
+import xzc.server.websocket.WebsocketHolder;
 
 import java.util.Map;
 
@@ -26,6 +28,12 @@ public class XzcSignalService {
     @Autowired
     private PushService pushService;
 
+    @Autowired
+    private GameService gameService;
+
+    @Autowired
+    private UserRelationCache userRelationCache;
+
     public void handleSignal(ChannelHandlerContext ctx, SignalMessage msg) throws Exception {
 
         try {
@@ -34,6 +42,7 @@ public class XzcSignalService {
                 XZCSignal signal = payload.unpack(XZCSignal.class);
                 XZCCommand command = signal.getCommand();
                 Any body = signal.getBody();
+                UserInfo userInfo = (UserInfo) ctx.channel().attr(AttributeKey.valueOf("userInfo")).get();
                 switch (command) {
                     case LOGIN_REQUEST:
                         if (body.is(LoginRequest.class)) {
@@ -45,7 +54,6 @@ public class XzcSignalService {
                         // 处理快速加入房间请求
                         if (body.is(QuickJoinRoomRequest.class)) {
                             QuickJoinRoomRequest quickJoinRoomRequest = body.unpack(QuickJoinRoomRequest.class);
-                            UserInfo userInfo = (UserInfo) ctx.channel().attr(AttributeKey.valueOf("userInfo")).get();
                             roomService.quickJoin(userInfo, quickJoinRoomRequest);
                         }
                         break;
@@ -53,7 +61,6 @@ public class XzcSignalService {
                         // 处理准备请求
                         if (body.is(ReadyRequest.class)) {
                             ReadyRequest readyRequest = body.unpack(ReadyRequest.class);
-                            UserInfo userInfo = (UserInfo) ctx.channel().attr(AttributeKey.valueOf("userInfo")).get();
                             roomService.ready(userInfo, readyRequest);
                         }
                         break;
@@ -61,7 +68,6 @@ public class XzcSignalService {
                         // 处理开始请求
                         if (body.is(StartRequest.class)) {
                             StartRequest startRequest = body.unpack(StartRequest.class);
-                            UserInfo userInfo = (UserInfo) ctx.channel().attr(AttributeKey.valueOf("userInfo")).get();
                             roomService.start(userInfo, startRequest);
                         }
                         break;
@@ -69,7 +75,6 @@ public class XzcSignalService {
                         // 处理退出请求
                         if (body.is(QuitRequest.class)) {
                             QuitRequest quitRequest = body.unpack(QuitRequest.class);
-                            UserInfo userInfo = (UserInfo) ctx.channel().attr(AttributeKey.valueOf("userInfo")).get();
                             roomService.quit(userInfo, quitRequest);
                         }
                         break;
@@ -104,6 +109,25 @@ public class XzcSignalService {
             log.warn("处理信令异常，", e);
         } finally {
         }
+    }
+
+    public void handleOffline(ChannelHandlerContext ctx) throws Exception {
+        Channel channel = ctx.channel();
+        UserInfo userInfo = (UserInfo) ctx.channel().attr(AttributeKey.valueOf("userInfo")).get();
+        if (userInfo != null) {
+            long uid = userInfo.getUid();
+            WebsocketHolder.removeById(uid);
+            // 查询用户加入的房间，将用户从房间中移除
+            Map<Object, Object> userRelation = userRelationCache.getUserRelation(uid);
+            Object roomId = userRelation.get(UserRelationCache.ROOM_ID);
+            // 退出该房间
+            roomService.quit(userInfo, (Long) roomId);
+            // todo 加入的游戏中改为托管状态
+//            gameService.
+        } else {
+            WebsocketHolder.remove(channel);
+        }
+        channel.close();
     }
 
 
