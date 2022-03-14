@@ -52,13 +52,13 @@ public class RoomService {
         // 通知客户端
         QuickJoinRoomResponse quickJoinRoomResponse = QuickJoinRoomResponse.newBuilder()
                 .setRoomId(aliveRoom.getRoomId())
-                .putAllParticipants(aliveRoom.getMembersMap().values()
+                .putAllRoomMembers(aliveRoom.getMembersMap().values()
                         .stream()
-                        .map(BeanConverter::member2Participant)
-                        .collect(Collectors.toMap(Participant::getUid, Function.identity())))
+                        .map(BeanConverter::member2RoomMember)
+                        .collect(Collectors.toMap(RoomMember::getUid, Function.identity())))
                 .build();
-        XZCSignal xzcSignal = XZCSignal.newBuilder()
-                .setCommand(XZCCommand.QUICK_JOIN_ROOM_RESPONSE)
+        XzcSignal xzcSignal = XzcSignal.newBuilder()
+                .setCommand(XzcCommand.QUICK_JOIN_ROOM_RESPONSE)
                 .setBody(Any.pack(quickJoinRoomResponse))
                 .build();
         pushService.pushSignal(userInfo.getUid(), xzcSignal);
@@ -75,13 +75,13 @@ public class RoomService {
         // 通知客户端
         ReadyResponse readyResponse = ReadyResponse.newBuilder()
                 .setRoomId(roomId)
-                .putAllParticipants(aliveRoom.getMembersMap().values()
+                .putAllRoomMembers(aliveRoom.getMembersMap().values()
                         .stream()
-                        .map(BeanConverter::member2Participant)
-                        .collect(Collectors.toMap(Participant::getUid, Function.identity())))
+                        .map(BeanConverter::member2RoomMember)
+                        .collect(Collectors.toMap(RoomMember::getUid, Function.identity())))
                 .build();
-        XZCSignal xzcSignal = XZCSignal.newBuilder()
-                .setCommand(XZCCommand.READY_RESPONSE)
+        XzcSignal xzcSignal = XzcSignal.newBuilder()
+                .setCommand(XzcCommand.READY_RESPONSE)
                 .setBody(Any.pack(readyResponse))
                 .build();
         // 通知房间内的其他成员
@@ -108,8 +108,8 @@ public class RoomService {
                 .setRoomId(aliveRoom.getRoomId())
                 .setGameId(aliveGame.getId())
                 .build();
-        XZCSignal xzcSignal = XZCSignal.newBuilder()
-                .setCommand(XZCCommand.READY_RESPONSE)
+        XzcSignal xzcSignal = XzcSignal.newBuilder()
+                .setCommand(XzcCommand.READY_RESPONSE)
                 .setBody(Any.pack(startResponse))
                 .build();
         pushService.pushSignal(userInfo.getUid(), xzcSignal);
@@ -121,7 +121,7 @@ public class RoomService {
      * 退出房间
      *
      * @param userInfo
-     * @param quitRequest
+     * @param roomId
      * @throws Exception
      */
     public void quit(UserInfo userInfo, Long roomId) throws Exception {
@@ -137,8 +137,8 @@ public class RoomService {
         QuitResponse quitResponse = QuitResponse.newBuilder()
                 .setRoomId(aliveRoom.getRoomId())
                 .build();
-        XZCSignal xzcSignal = XZCSignal.newBuilder()
-                .setCommand(XZCCommand.QUIT_RESPONSE)
+        XzcSignal xzcSignal = XzcSignal.newBuilder()
+                .setCommand(XzcCommand.QUIT_RESPONSE)
                 .setBody(Any.pack(quitResponse))
                 .build();
         pushService.pushSignal(userInfo.getUid(), xzcSignal);
@@ -165,8 +165,8 @@ public class RoomService {
                 .setAvatar(userInfo.getAvatar());
     }
 
-    public Participant userInfoToParticipant(UserInfo userInfo) {
-        return Participant.newBuilder()
+    public RoomMember userInfoToRoomMember(UserInfo userInfo) {
+        return RoomMember.newBuilder()
                 .setUid(userInfo.getUid())
                 .setNickname(userInfo.getNickname())
                 .setAvatar(userInfo.getAvatar())

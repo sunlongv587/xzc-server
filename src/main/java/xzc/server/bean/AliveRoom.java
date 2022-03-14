@@ -5,8 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import xzc.server.constant.RoomState;
-import xzc.server.proto.ParticipantEvent;
-import xzc.server.proto.ParticipantState;
 import xzc.server.proto.RoomType;
 
 import java.util.LinkedHashMap;
@@ -57,16 +55,16 @@ public class AliveRoom {
         PLAYING,
         IN_PLAY;
 
-        public static ParticipantState toParticipantState(MemberState memberState) {
+        public static xzc.server.proto.MemberState toRoomMemberState(MemberState memberState) {
             switch (memberState) {
                 case IDLE:
-                    return ParticipantState.IDLE;
+                    return xzc.server.proto.MemberState.IDLE;
                 case IN_PLAY:
-                    return ParticipantState.IN_PLAY;
+                    return xzc.server.proto.MemberState.IN_PLAY;
                 case PLAYING:
-                    return ParticipantState.PLAYING;
+                    return xzc.server.proto.MemberState.PLAYING;
                 default:
-                    return ParticipantState.UNRECOGNIZED;
+                    return xzc.server.proto.MemberState.UNRECOGNIZED;
             }
         }
     }
@@ -79,18 +77,20 @@ public class AliveRoom {
         START,
         QUIT;
 
-        public static ParticipantEvent toParticipantEvent(MemberEvent memberState) {
+        public static xzc.server.proto.MemberEvent toRoomMemberEvent(MemberEvent memberState) {
             switch (memberState) {
                 case NONE:
-                    return ParticipantEvent.NONE;
+                    return xzc.server.proto.MemberEvent.NONE;
                 case JOIN:
-                    return ParticipantEvent.JOIN;
+                    return xzc.server.proto.MemberEvent.JOIN;
                 case READY:
-                    return ParticipantEvent.READY;
+                    return xzc.server.proto.MemberEvent.READY;
                 case CANCEL_READY:
-                    return ParticipantEvent.CANCEL_READY;
+                    return xzc.server.proto.MemberEvent.CANCEL_READY;
+                case QUIT:
+                    return xzc.server.proto.MemberEvent.QUIT;
                 default:
-                    return ParticipantEvent.UNRECOGNIZED;
+                    return xzc.server.proto.MemberEvent.UNRECOGNIZED;
             }
         }
     }

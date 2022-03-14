@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import xzc.server.proto.MessageType;
 import xzc.server.proto.SignalMessage;
-import xzc.server.proto.XZCSignal;
+import xzc.server.proto.XzcSignal;
 import xzc.server.websocket.WebsocketHolder;
 
 import java.util.List;
@@ -29,19 +29,19 @@ public class PushService {
         uids.forEach(uid -> pushMessage(uid, message));
     }
 
-    public void batchPush(List<Long> receivers, MessageType messageType, XZCSignal signal) {
+    public void batchPush(List<Long> receivers, MessageType messageType, XzcSignal signal) {
         receivers.forEach(receiver -> push(receiver, messageType, signal));
     }
 
-    public void batchPushSignal(List<Long> receivers, XZCSignal signal) {
+    public void batchPushSignal(List<Long> receivers, XzcSignal signal) {
         receivers.forEach(receiver -> pushSignal(receiver, signal));
     }
 
-    public void pushSignal(Long receiver, XZCSignal signal) {
+    public void pushSignal(Long receiver, XzcSignal signal) {
         push(receiver, MessageType.SIGNAL, signal);
     }
 
-    public void pushSignal(Channel channel, XZCSignal signal) {
+    public void pushSignal(Channel channel, XzcSignal signal) {
         if (channel != null && channel.isActive()) {
             channel.writeAndFlush(packSignal(signal));
         } else {
@@ -49,11 +49,11 @@ public class PushService {
         }
     }
 
-    public void push(Long receiver, MessageType messageType, XZCSignal signal) {
+    public void push(Long receiver, MessageType messageType, XzcSignal signal) {
         pushMessage(receiver, packSignalWithType(messageType, signal));
     }
 
-    public SignalMessage packSignal(XZCSignal signal) {
+    public SignalMessage packSignal(XzcSignal signal) {
         String uuid = UUID.randomUUID().toString();
         log.info("uuid: {}", uuid);
         return SignalMessage.newBuilder()
@@ -66,7 +66,7 @@ public class PushService {
                 .build();
     }
 
-    public SignalMessage packSignalWithType(MessageType messageType, XZCSignal signal) {
+    public SignalMessage packSignalWithType(MessageType messageType, XzcSignal signal) {
         String uuid = UUID.randomUUID().toString();
         log.info("uuid: {}", uuid);
         return SignalMessage.newBuilder()

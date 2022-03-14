@@ -14,7 +14,7 @@ import xzc.server.constant.RedisKey;
 import xzc.server.constant.RoomState;
 import xzc.server.exception.XZCException;
 import xzc.server.proto.ErrorCode;
-import xzc.server.proto.Participant;
+import xzc.server.proto.RoomMember;
 import xzc.server.proto.RoomType;
 
 import java.util.LinkedHashMap;
@@ -217,8 +217,8 @@ public class AliveRoomHolder {
         });
     }
 
-    public Participant userInfoToParticipant(UserInfo userInfo) {
-        return Participant.newBuilder()
+    public RoomMember userInfoToRoomMember(UserInfo userInfo) {
+        return RoomMember.newBuilder()
                 .setUid(userInfo.getUid())
                 .setNickname(userInfo.getNickname())
                 .setAvatar(userInfo.getAvatar())

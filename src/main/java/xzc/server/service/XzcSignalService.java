@@ -38,9 +38,9 @@ public class XzcSignalService {
 
         try {
             Any payload = msg.getPayload();
-            if (payload.is(XZCSignal.class)) {
-                XZCSignal signal = payload.unpack(XZCSignal.class);
-                XZCCommand command = signal.getCommand();
+            if (payload.is(XzcSignal.class)) {
+                XzcSignal signal = payload.unpack(XzcSignal.class);
+                XzcCommand command = signal.getCommand();
                 Any body = signal.getBody();
                 UserInfo userInfo = (UserInfo) ctx.channel().attr(AttributeKey.valueOf("userInfo")).get();
                 switch (command) {
@@ -100,8 +100,8 @@ public class XzcSignalService {
             if (data != null) {
                 builder.putAllData(data);
             }
-            XZCSignal xzcSignal = XZCSignal.newBuilder()
-                    .setCommand(XZCCommand.ERROR_RESPONSE)
+            XzcSignal xzcSignal = XzcSignal.newBuilder()
+                    .setCommand(XzcCommand.ERROR_RESPONSE)
                     .setBody(Any.pack(builder.build()))
                     .build();
             pushService.pushSignal(ctx.channel(), xzcSignal);
