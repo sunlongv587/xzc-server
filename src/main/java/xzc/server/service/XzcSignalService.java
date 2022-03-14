@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import xzc.server.bean.UserInfo;
-import xzc.server.exception.XZCException;
+import xzc.server.exception.XzcException;
 import xzc.server.proto.*;
 import xzc.server.websocket.WebsocketHolder;
 
@@ -80,18 +80,28 @@ public class XzcSignalService {
                         break;
                     case QUICK_CHANGE_REQUEST:
                         // todo 快速更换房间
+                        break;
+                    case TAKE_CARD_REQUEST:
+                        // 抓牌
+                        if (body.is(TakeCardRequest.class)) {
+                            TakeCardRequest takeCardRequest = body.unpack(TakeCardRequest.class);
+                            gameService.takeCard(userInfo, takeCardRequest);
+                        }
+                        break;
+
                     case LOGIN_RESPONSE:
                     case QUICK_JOIN_ROOM_RESPONSE:
                     case READY_RESPONSE:
                     case START_RESPONSE:
-                        log.warn("忽略处理");
+                        log.warn("Response command: {}, Ignore handle", command.name());
                         break;
 
                     default:
+                        log.warn("Unknown command: {}, Ignore handle", command.name());
                         break;
                 }
             }
-        } catch (XZCException exception) {
+        } catch (XzcException exception) {
             log.warn("处理信令异常，", exception);
             Map<String, String> data = exception.getData();
             ErrorResponse.Builder builder = ErrorResponse.newBuilder()

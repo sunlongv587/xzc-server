@@ -7,8 +7,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import xzc.server.bean.AliveGame;
+import xzc.server.constant.Card;
 import xzc.server.constant.RedisKey;
+import xzc.server.constant.RoomState;
 
+import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -44,6 +48,28 @@ public class AliveGameHolder {
         return (AliveGame) redisTemplate.opsForValue().get(getGameKey(gameId));
     }
 
+    public AliveGame takeCard(Long gameId, Long userId) throws Exception {
+        return handleWithGameLock(gameId, new WithGameCallable<AliveGame> (gameId, userId) {
+
+            @Override
+            protected AliveGame innerCall() throws Exception {
+                Map<Long, AliveGame.Gamer> gamerMap = aliveGame.getGamerMap();
+                AliveGame.Gamer gamer = gamerMap.get(operator);
+                if (gamer == null || gamer.getState() != AliveGame.GamerState.InAction) {
+                    log.warn("");
+                    throw new RuntimeException("玩家不在游戏中或还没轮到该玩家: " + operator + ", gameId: " + gameId);
+                }
+                List<Card> cardHouse = aliveGame.getCardLibrary();
+//                membersMap.remove(operator);
+//                if (membersMap.size() == 0) {
+//                    aliveRoom.setState(RoomState.CLOSED);
+//                }
+                return aliveGame;
+            }
+
+        });
+    }
+
     public <T> T handleWithGameLock(long gameId, Callable<T> handleImpl) throws Exception{
         RLock sLock = redissonClient.getLock(getGameLockKey(gameId));
         long timeout = 5000L;
@@ -53,8 +79,8 @@ public class AliveGameHolder {
             throw new RuntimeException("Get alive game lock timeout. Please try again");
         }
         try {
-            T res = handleImpl.call();
-            return res;
+            // todo 使用线程池
+            return handleImpl.call();
         }finally {
             sLock.unlockAsync();
         }
@@ -97,7 +123,7 @@ public class AliveGameHolder {
                 }
             } finally {
                 if (changed) {
-                    //保存修改后的aliveGame
+                    //保存修改后的 gamerMap
                     aliveGame.setLastChangeTime(System.currentTimeMillis());
                     saveGame(aliveGame);
                 }

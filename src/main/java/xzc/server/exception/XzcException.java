@@ -6,7 +6,7 @@ import xzc.server.proto.ErrorCode;
 import java.text.MessageFormat;
 import java.util.Map;
 
-public class XZCException extends RuntimeException {
+public class XzcException extends RuntimeException {
 
     @Getter
     private ErrorCode errorCode;
@@ -16,18 +16,18 @@ public class XZCException extends RuntimeException {
 
     private Object[] objects;
 
-    public XZCException(ErrorCode errorCode, String message) {
+    public XzcException(ErrorCode errorCode, String message) {
         super(message);
         this.errorCode = errorCode;
     }
 
-    public XZCException(ErrorCode errorCode, String message, Map<String, String> data) {
+    public XzcException(ErrorCode errorCode, String message, Map<String, String> data) {
         super(message);
         this.errorCode = errorCode;
         this.data = data;
     }
 
-    public XZCException(ErrorCode errorCode, String message, Map<String, String> data, Object... objects) {
+    public XzcException(ErrorCode errorCode, String message, Map<String, String> data, Object... objects) {
         this(errorCode, message);
         this.data = data;
         this.objects = objects;

@@ -5,13 +5,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import xzc.server.bean.AliveGame;
 import xzc.server.bean.AliveRoom;
-import xzc.server.constant.Card;
-import xzc.server.util.CardUtil;
+import xzc.server.bean.UserInfo;
+import xzc.server.proto.TakeCardRequest;
 
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,18 +32,13 @@ public class GameService {
         AliveGame aliveGame = new AliveGame()
                 // 生成ID
                 .setId(idService.snowflakeNextId())
-                // 洗牌
-                .setCardHouse(CardUtil.getCardHouse())
                 // 玩家序列
-                .setOrderedGamerList(memberIds)
-                // 起始玩家
-                .setStartingGamer(memberIds.get(0))
+                .setOrderedGamers(memberIds)
                 // 当前玩家
-                .setCurGamerId(memberIds.get(0))
+                .setOrderedGamersIndex(memberIds.get(0))
                 .setLastChangeTime(System.currentTimeMillis());
         // 给玩家发牌
-        List<Card> cardHouse = aliveGame.getCardHouse();
-        Queue<Card> cardQueue = new LinkedList<>(cardHouse);
+        int pointer = aliveGame.getCardLibraryIndex();
         Map<Long, AliveGame.Gamer> gamerMap = Maps.newHashMapWithExpectedSize(memberMap.size());
         for (Long memberId : memberIds) {
             AliveRoom.Member member = memberMap.get(memberId);
@@ -54,15 +47,25 @@ public class GameService {
                     .setNickname(member.getNickname())
                     .setAvatar(member.getAvatar())
                     // 发牌
-                    .setCard(cardQueue.poll())
+                    .setHandCard(aliveGame.getCardLibrary().get(pointer))
                     .setJoinTime(System.currentTimeMillis());
+            pointer++;
             gamerMap.put(memberId, gamer);
         }
         aliveGame.setGamerMap(gamerMap)
                 // 给小早川发牌
-                .setXzcCard(cardQueue.poll());
+                .setXzcCard(aliveGame.getCardLibrary().get(pointer))
+                .setCardLibraryIndex(pointer + 1);
         aliveGameHolder.saveGame(aliveGame);
         return aliveGame;
+    }
+
+    public void takeCard(UserInfo userInfo, TakeCardRequest takeCardRequest) throws Exception {
+        long gameId = takeCardRequest.getGameId();
+        AliveGame aliveGame = aliveGameHolder.takeCard(gameId, userInfo.getUid());
+        // TODO: 2022/3/14 响应客户端，
+
+        // TODO: 2022/3/14 通知其他玩家
     }
 
 }

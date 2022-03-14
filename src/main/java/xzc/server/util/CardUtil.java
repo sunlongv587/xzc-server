@@ -9,7 +9,7 @@ import java.util.List;
 
 public class CardUtil {
 
-    public static List<Card> getCardHouse() {
+    public static List<Card> getRandomCardLibrary() {
         Card[] values = Card.values();
         List<Card> cardList = Lists.newLinkedList();
         cardList.addAll(Arrays.asList(values));
@@ -24,7 +24,7 @@ public class CardUtil {
 
 
     public static void main(String[] args) {
-        List<Card> cardHouse = getCardHouse();
+        List<Card> cardHouse = getRandomCardLibrary();
         for (Card card : cardHouse) {
             System.out.println(card);
         }
