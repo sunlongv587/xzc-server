@@ -1,5 +1,7 @@
 package xzc.server.constant;
 
+import xzc.server.proto.XzcCard;
+
 public enum Card {
     CRAD_1(0, 1),
     CRAD_2(1, 2),
@@ -26,6 +28,14 @@ public enum Card {
         this.point = point;
     }
 
+    public static Card of(XzcCard xzcCard) {
+        for (Card value : values()) {
+            if (value.index == xzcCard.getNumber()) {
+                return value;
+            }
+        }
+        return null;
+    }
 
 
 }

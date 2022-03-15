@@ -8,8 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import xzc.server.bean.UserInfo;
 import xzc.server.bean.AliveRoom;
+import xzc.server.bean.UserInfo;
 import xzc.server.constant.RedisKey;
 import xzc.server.constant.RoomState;
 import xzc.server.exception.XzcException;
@@ -206,7 +206,7 @@ public class AliveRoomHolder {
                 if (membersMap == null
                         || membersMap.get(operator) == null
                         || membersMap.get(operator).getState() != AliveRoom.MemberState.IDLE) {
-                    throw new RuntimeException("玩家不在Idle状态，" + operator);
+                    throw new XzcException(ErrorCode.MEMBER_STATE_NOT_IS_IDLE, "玩家不在Idle状态，" + operator);
                 }
                 membersMap.remove(operator);
                 if (membersMap.size() == 0) {

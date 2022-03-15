@@ -88,6 +88,20 @@ public class XzcSignalService {
                             gameService.takeCard(userInfo, takeCardRequest);
                         }
                         break;
+                    case DISCARD_REQUEST:
+                        // 弃牌
+                        if (body.is(DiscardRequest.class)) {
+                            DiscardRequest discardRequest = body.unpack(DiscardRequest.class);
+                            gameService.discard(userInfo, discardRequest);
+                        }
+                        break;
+                    case CHANGE_XZC_CARD_REQUEST:
+                        // 弃牌
+                        if (body.is(ChangeXzcCardRequest.class)) {
+                            ChangeXzcCardRequest changeXzcCardRequest = body.unpack(ChangeXzcCardRequest.class);
+                            gameService.changeXzcCard(userInfo, changeXzcCardRequest);
+                        }
+                        break;
 
                     case LOGIN_RESPONSE:
                     case QUICK_JOIN_ROOM_RESPONSE:

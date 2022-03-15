@@ -6,6 +6,9 @@ import org.springframework.stereotype.Service;
 import xzc.server.bean.AliveGame;
 import xzc.server.bean.AliveRoom;
 import xzc.server.bean.UserInfo;
+import xzc.server.constant.Card;
+import xzc.server.proto.ChangeXzcCardRequest;
+import xzc.server.proto.DiscardRequest;
 import xzc.server.proto.TakeCardRequest;
 
 import java.util.List;
@@ -33,9 +36,8 @@ public class GameService {
                 // 生成ID
                 .setId(idService.snowflakeNextId())
                 // 玩家序列
-                .setOrderedGamers(memberIds)
+                .setOrderlyGamers(memberIds)
                 // 当前玩家
-                .setOrderedGamersIndex(memberIds.get(0))
                 .setLastChangeTime(System.currentTimeMillis());
         // 给玩家发牌
         int pointer = aliveGame.getCardLibraryIndex();
@@ -63,6 +65,23 @@ public class GameService {
     public void takeCard(UserInfo userInfo, TakeCardRequest takeCardRequest) throws Exception {
         long gameId = takeCardRequest.getGameId();
         AliveGame aliveGame = aliveGameHolder.takeCard(gameId, userInfo.getUid());
+        // TODO: 2022/3/14 响应客户端，
+
+        // TODO: 2022/3/14 通知其他玩家
+    }
+
+    public void discard(UserInfo userInfo, DiscardRequest discardRequest) throws Exception {
+        long gameId = discardRequest.getGameId();
+        Card card = Card.of(discardRequest.getCard());
+        AliveGame aliveGame = aliveGameHolder.discard(gameId, userInfo.getUid(), card);
+        // TODO: 2022/3/14 响应客户端，
+
+        // TODO: 2022/3/14 通知其他玩家
+    }
+
+    public void changeXzcCard(UserInfo userInfo, ChangeXzcCardRequest changeXzcCardRequest) throws Exception {
+        long gameId = changeXzcCardRequest.getGameId();
+        AliveGame aliveGame = aliveGameHolder.changeXzcCard(gameId, userInfo.getUid());
         // TODO: 2022/3/14 响应客户端，
 
         // TODO: 2022/3/14 通知其他玩家

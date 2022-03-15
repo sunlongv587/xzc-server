@@ -9,7 +9,8 @@ import org.springframework.stereotype.Service;
 import xzc.server.bean.AliveGame;
 import xzc.server.constant.Card;
 import xzc.server.constant.RedisKey;
-import xzc.server.constant.RoomState;
+import xzc.server.exception.XzcException;
+import xzc.server.proto.ErrorCode;
 
 import java.util.List;
 import java.util.Map;
@@ -49,39 +50,125 @@ public class AliveGameHolder {
     }
 
     public AliveGame takeCard(Long gameId, Long userId) throws Exception {
-        return handleWithGameLock(gameId, new WithGameCallable<AliveGame> (gameId, userId) {
+        return handleWithGameLock(gameId, new WithGameCallable<AliveGame>(gameId, userId) {
 
             @Override
             protected AliveGame innerCall() throws Exception {
                 Map<Long, AliveGame.Gamer> gamerMap = aliveGame.getGamerMap();
                 AliveGame.Gamer gamer = gamerMap.get(operator);
                 if (gamer == null || gamer.getState() != AliveGame.GamerState.InAction) {
-                    log.warn("");
-                    throw new RuntimeException("玩家不在游戏中或还没轮到该玩家: " + operator + ", gameId: " + gameId);
+                    throw new XzcException(ErrorCode.INTERNAL_SERVER_ERROR, "玩家不在游戏中或还没轮到该玩家: " + operator + ", gameId: " + gameId);
                 }
-                List<Card> cardHouse = aliveGame.getCardLibrary();
-//                membersMap.remove(operator);
-//                if (membersMap.size() == 0) {
-//                    aliveRoom.setState(RoomState.CLOSED);
-//                }
+                List<Card> cardLibrary = aliveGame.getCardLibrary();
+                // 从牌库抓一张牌
+                int cardLibraryIndex = aliveGame.getCardLibraryIndex();
+                gamer.setDrewCard(cardLibrary.get(cardLibraryIndex))
+                        .setState(AliveGame.GamerState.Picking)
+                        .setEvent(AliveGame.GamerEvent.TakeCard);
+                aliveGame.setCardLibraryIndex(cardLibraryIndex + 1);
                 return aliveGame;
             }
 
         });
     }
 
-    public <T> T handleWithGameLock(long gameId, Callable<T> handleImpl) throws Exception{
+
+    public AliveGame discard(Long gameId, Long userId, Card card) throws Exception {
+        return handleWithGameLock(gameId, new WithGameCallable<AliveGame>(gameId, userId) {
+
+            @Override
+            protected AliveGame innerCall() throws Exception {
+                Map<Long, AliveGame.Gamer> gamerMap = aliveGame.getGamerMap();
+                AliveGame.Gamer gamer = gamerMap.get(operator);
+                if (gamer == null || gamer.getState() != AliveGame.GamerState.Picking) {
+                    throw new XzcException(ErrorCode.INTERNAL_SERVER_ERROR, "玩家不在游戏中或还没轮到该玩家: " + operator + ", gameId: " + gameId);
+                }
+                // 修改玩家手牌
+                if (card == gamer.getDrewCard()) {
+                    gamer.setHandCard(card)
+                            .setDrewCard(null);
+                } else if (card == gamer.getHandCard()) {
+                    gamer.setDrewCard(null);
+                } else {
+                    throw new XzcException(ErrorCode.INTERNAL_SERVER_ERROR, "Not Happened, 玩家的弃牌有问题: " + operator + ", gameId: " + gameId + ", card: " + card.name());
+                }
+
+                // 回合结束
+                gamer.setState(AliveGame.GamerState.Waiting)
+                        .setEvent(AliveGame.GamerEvent.Discard);
+                // 判断是否是最后一个玩家
+                int orderedGamersIndex = aliveGame.getOrderedGamersIndex();
+                if (orderedGamersIndex == aliveGame.getOrderlyGamers().size() - 1) {
+                    // 开启下一个 part，轮流下注
+                    orderedGamersIndex = 0;
+                    Long gamerId = aliveGame.getOrderlyGamers().get(orderedGamersIndex);
+                    aliveGame.getGamerMap().get(gamerId)
+                            .setState(AliveGame.GamerState.Betting);
+                } else {
+                    orderedGamersIndex++;
+                    Long gamerId = aliveGame.getOrderlyGamers().get(orderedGamersIndex);
+                    // 轮到下个玩家
+                    aliveGame.getGamerMap().get(gamerId)
+                            .setState(AliveGame.GamerState.InAction);
+                }
+                return aliveGame;
+            }
+        });
+    }
+
+    public AliveGame changeXzcCard(Long gameId, Long userId) throws Exception {
+        return handleWithGameLock(gameId, new WithGameCallable<AliveGame>(gameId, userId) {
+
+            @Override
+            protected AliveGame innerCall() throws Exception {
+                Map<Long, AliveGame.Gamer> gamerMap = aliveGame.getGamerMap();
+                AliveGame.Gamer gamer = gamerMap.get(operator);
+                if (gamer == null || gamer.getState() != AliveGame.GamerState.InAction) {
+                    throw new XzcException(ErrorCode.INTERNAL_SERVER_ERROR, "玩家不在游戏中或还没轮到该玩家: " + operator + ", gameId: " + gameId);
+                }
+                List<Card> cardLibrary = aliveGame.getCardLibrary();
+                // 从牌库拿一张牌
+                int cardLibraryIndex = aliveGame.getCardLibraryIndex();
+                Card xzcCard = cardLibrary.get(cardLibraryIndex);
+                // 旧小早川牌放入弃牌堆
+                aliveGame.getDiscardPile().add(aliveGame.getXzcCard());
+                aliveGame.setXzcCard(xzcCard)
+                        .setCardLibraryIndex(cardLibraryIndex + 1);
+                // 回合结束
+                gamer.setState(AliveGame.GamerState.Waiting)
+                        .setEvent(AliveGame.GamerEvent.ChangeXzcCard);
+                // 判断是否是最后一个玩家
+                int orderedGamersIndex = aliveGame.getOrderedGamersIndex();
+                if (orderedGamersIndex == aliveGame.getOrderlyGamers().size() - 1) {
+                    // 开启下一个unit，轮流下注
+                    orderedGamersIndex = 0;
+                    Long gamerId = aliveGame.getOrderlyGamers().get(orderedGamersIndex);
+                    aliveGame.getGamerMap().get(gamerId)
+                            .setState(AliveGame.GamerState.Betting);
+                } else {
+                    orderedGamersIndex++;
+                    Long gamerId = aliveGame.getOrderlyGamers().get(orderedGamersIndex);
+                    // 轮到下个玩家
+                    aliveGame.getGamerMap().get(gamerId)
+                            .setState(AliveGame.GamerState.InAction);
+                }
+                return aliveGame;
+            }
+        });
+    }
+
+    public <T> T handleWithGameLock(long gameId, Callable<T> handleImpl) throws Exception {
         RLock sLock = redissonClient.getLock(getGameLockKey(gameId));
         long timeout = 5000L;
-        if (!sLock.tryLock(timeout, timeout,TimeUnit.MILLISECONDS)) {
+        if (!sLock.tryLock(timeout, timeout, TimeUnit.MILLISECONDS)) {
             //that should not happen.
-            log.warn("Try get alive game lock timeout. {}",gameId);
+            log.warn("Try get alive game lock timeout. {}", gameId);
             throw new RuntimeException("Get alive game lock timeout. Please try again");
         }
         try {
             // todo 使用线程池
             return handleImpl.call();
-        }finally {
+        } finally {
             sLock.unlockAsync();
         }
     }
@@ -118,7 +205,7 @@ public class AliveGameHolder {
                 if (ignoreException) {
                     log.warn("Handle game: {} operate is exception，ignore this：{}！", gameId, e);
                     return null;
-                }else {
+                } else {
                     throw e;
                 }
             } finally {
