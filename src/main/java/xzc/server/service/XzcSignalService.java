@@ -96,7 +96,7 @@ public class XzcSignalService {
                         }
                         break;
                     case CHANGE_XZC_CARD_REQUEST:
-                        // 弃牌
+                        // 更换小早川牌
                         if (body.is(ChangeXzcCardRequest.class)) {
                             ChangeXzcCardRequest changeXzcCardRequest = body.unpack(ChangeXzcCardRequest.class);
                             gameService.changeXzcCard(userInfo, changeXzcCardRequest);
@@ -107,6 +107,11 @@ public class XzcSignalService {
                     case QUICK_JOIN_ROOM_RESPONSE:
                     case READY_RESPONSE:
                     case START_RESPONSE:
+                    case QUIT_RESPONSE:
+                    case QUICK_CHANGE_RESPONSE:
+                    case TAKE_CARD_RESPONSE:
+                    case DISCARD_RESPONSE:
+                    case CHANGE_XZC_CARD_RESPONSE:
                         log.warn("Response command: {}, Ignore handle", command.name());
                         break;
 

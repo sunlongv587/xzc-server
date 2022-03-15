@@ -1,11 +1,13 @@
 package xzc.server.service;
 
 import com.google.protobuf.Any;
+import com.google.protobuf.GeneratedMessageV3;
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import xzc.server.proto.MessageType;
 import xzc.server.proto.SignalMessage;
+import xzc.server.proto.XzcCommand;
 import xzc.server.proto.XzcSignal;
 import xzc.server.websocket.WebsocketHolder;
 
@@ -53,7 +55,7 @@ public class PushService {
         pushMessage(receiver, packSignalWithType(messageType, signal));
     }
 
-    public SignalMessage packSignal(XzcSignal signal) {
+    public static SignalMessage packSignal(XzcSignal signal) {
         String uuid = UUID.randomUUID().toString();
         log.info("uuid: {}", uuid);
         return SignalMessage.newBuilder()
@@ -66,7 +68,7 @@ public class PushService {
                 .build();
     }
 
-    public SignalMessage packSignalWithType(MessageType messageType, XzcSignal signal) {
+    public static SignalMessage packSignalWithType(MessageType messageType, XzcSignal signal) {
         String uuid = UUID.randomUUID().toString();
         log.info("uuid: {}", uuid);
         return SignalMessage.newBuilder()
@@ -76,6 +78,15 @@ public class PushService {
                 .setType(messageType)
                 .setVersion("1.0")
                 .setPayload(Any.pack(signal))
+                .build();
+    }
+
+    public static XzcSignal packBodyWithCommand(GeneratedMessageV3 body, XzcCommand command) {
+        String uuid = UUID.randomUUID().toString();
+        log.info("uuid: {}", uuid);
+        return XzcSignal.newBuilder()
+                .setBody(Any.pack(body))
+                .setCommand(command)
                 .build();
     }
 

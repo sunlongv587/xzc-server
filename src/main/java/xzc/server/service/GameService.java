@@ -7,9 +7,7 @@ import xzc.server.bean.AliveGame;
 import xzc.server.bean.AliveRoom;
 import xzc.server.bean.UserInfo;
 import xzc.server.constant.Card;
-import xzc.server.proto.ChangeXzcCardRequest;
-import xzc.server.proto.DiscardRequest;
-import xzc.server.proto.TakeCardRequest;
+import xzc.server.proto.*;
 
 import java.util.List;
 import java.util.Map;
@@ -18,9 +16,11 @@ import java.util.stream.Collectors;
 @Service
 public class GameService {
 
-
     @Autowired
     private IdService idService;
+
+    @Autowired
+    private PushService pushService;
 
     @Autowired
     private AliveGameHolder aliveGameHolder;
@@ -65,9 +65,13 @@ public class GameService {
     public void takeCard(UserInfo userInfo, TakeCardRequest takeCardRequest) throws Exception {
         long gameId = takeCardRequest.getGameId();
         AliveGame aliveGame = aliveGameHolder.takeCard(gameId, userInfo.getUid());
+        Card drewCard = aliveGame.getGamerMap().get(userInfo.getUid()).getDrewCard();
         // TODO: 2022/3/14 响应客户端，
-
+        TakeCardResponse takeCardResponse = TakeCardResponse.newBuilder().setCard(Card.toXzcCard(drewCard)).build();
+        pushService.pushSignal(userInfo.getUid(), PushService
+                .packBodyWithCommand(takeCardResponse, XzcCommand.TAKE_CARD_RESPONSE));
         // TODO: 2022/3/14 通知其他玩家
+
     }
 
     public void discard(UserInfo userInfo, DiscardRequest discardRequest) throws Exception {

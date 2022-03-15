@@ -37,5 +37,13 @@ public enum Card {
         return null;
     }
 
+    public static XzcCard toXzcCard(Card card) {
+        for (XzcCard value : XzcCard.values()) {
+            if (card.index == value.getNumber()) {
+                return value;
+            }
+        }
+        return XzcCard.UNRECOGNIZED;
+    }
 
 }

@@ -1,6 +1,5 @@
 package xzc.server.service;
 
-import com.google.protobuf.Any;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -57,13 +56,9 @@ public class RoomService {
                         .map(BeanConverter::member2RoomMember)
                         .collect(Collectors.toMap(RoomMember::getUid, Function.identity())))
                 .build();
-        XzcSignal xzcSignal = XzcSignal.newBuilder()
-                .setCommand(XzcCommand.QUICK_JOIN_ROOM_RESPONSE)
-                .setBody(Any.pack(quickJoinRoomResponse))
-                .build();
-        pushService.pushSignal(userInfo.getUid(), xzcSignal);
+        pushService.pushSignal(userInfo.getUid(), PushService.packBodyWithCommand(quickJoinRoomResponse, XzcCommand.QUICK_JOIN_ROOM_RESPONSE));
         // 通知房间内的其他成员
-        pushService.batchPushSignal(new ArrayList<>(aliveRoom.getMembersMap().keySet()), xzcSignal);
+//        pushService.batchPushSignal(new ArrayList<>(aliveRoom.getMembersMap().keySet()), xzcSignal);
         // 维护缓存
         userRelationCache.onJoinRoom(userInfo.getUid(), aliveRoom.getRoomId());
     }
@@ -80,12 +75,8 @@ public class RoomService {
                         .map(BeanConverter::member2RoomMember)
                         .collect(Collectors.toMap(RoomMember::getUid, Function.identity())))
                 .build();
-        XzcSignal xzcSignal = XzcSignal.newBuilder()
-                .setCommand(XzcCommand.READY_RESPONSE)
-                .setBody(Any.pack(readyResponse))
-                .build();
         // 通知房间内的其他成员
-        pushService.batchPushSignal(new ArrayList<>(aliveRoom.getMembersMap().keySet()), xzcSignal);
+        pushService.batchPushSignal(new ArrayList<>(aliveRoom.getMembersMap().keySet()), PushService.packBodyWithCommand(readyResponse, XzcCommand.READY_RESPONSE));
     }
 
     /**
@@ -108,11 +99,7 @@ public class RoomService {
                 .setRoomId(aliveRoom.getRoomId())
                 .setGameId(aliveGame.getId())
                 .build();
-        XzcSignal xzcSignal = XzcSignal.newBuilder()
-                .setCommand(XzcCommand.READY_RESPONSE)
-                .setBody(Any.pack(startResponse))
-                .build();
-        pushService.pushSignal(userInfo.getUid(), xzcSignal);
+        pushService.pushSignal(userInfo.getUid(), PushService.packBodyWithCommand(startResponse, XzcCommand.READY_RESPONSE));
         // todo 通知其他所有玩家
         userRelationCache.onStartGame(userInfo.getUid(), aliveGame.getId());
     }
@@ -137,12 +124,9 @@ public class RoomService {
         QuitResponse quitResponse = QuitResponse.newBuilder()
                 .setRoomId(aliveRoom.getRoomId())
                 .build();
-        XzcSignal xzcSignal = XzcSignal.newBuilder()
-                .setCommand(XzcCommand.QUIT_RESPONSE)
-                .setBody(Any.pack(quitResponse))
-                .build();
-        pushService.pushSignal(userInfo.getUid(), xzcSignal);
+        pushService.pushSignal(userInfo.getUid(), PushService.packBodyWithCommand(quitResponse, XzcCommand.QUIT_RESPONSE));
         // todo 通知其他所有玩家
+
         userRelationCache.onQuitRoom(userInfo.getUid(), aliveRoom.getRoomId());
     }
 
