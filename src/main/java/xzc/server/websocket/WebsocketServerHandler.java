@@ -7,8 +7,8 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import lombok.extern.slf4j.Slf4j;
-import xzc.server.proto.MessageType;
-import xzc.server.proto.SignalMessage;
+import xzc.server.proto.common.MessageType;
+import xzc.server.proto.common.SignalMessage;
 import xzc.server.service.XzcSignalService;
 
 @ChannelHandler.Sharable
@@ -71,11 +71,11 @@ public class WebsocketServerHandler extends SimpleChannelInboundHandler<SignalMe
         long timestamp = msg.getTimestamp();
         Any payload = msg.getPayload();
         switch (type) {
-            case ECHO: // 心跳
+            case MESSAGE_TYPE_ECHO: // 心跳
                 log.info("客户端echo");
                 echo(ctx, msg);
                 break;
-            case SIGNAL: // 处理信令
+            case MESSAGE_TYPE_SIGNAL: // 处理信令
                 log.info("客户端信令signal");
                 if (gameId == 1) {
                     xzcSignalService.handleSignal(ctx, msg);

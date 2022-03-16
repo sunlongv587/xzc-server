@@ -10,7 +10,7 @@ import xzc.server.bean.AliveGame;
 import xzc.server.constant.Card;
 import xzc.server.constant.RedisKey;
 import xzc.server.exception.XzcException;
-import xzc.server.proto.ErrorCode;
+import xzc.server.proto.common.ErrorCode;
 
 import java.util.List;
 import java.util.Map;
@@ -57,7 +57,7 @@ public class AliveGameHolder {
                 Map<Long, AliveGame.Gamer> gamerMap = aliveGame.getGamerMap();
                 AliveGame.Gamer gamer = gamerMap.get(operator);
                 if (gamer == null || gamer.getState() != AliveGame.GamerState.InAction) {
-                    throw new XzcException(ErrorCode.INTERNAL_SERVER_ERROR, "玩家不在游戏中或还没轮到该玩家: " + operator + ", gameId: " + gameId);
+                    throw new XzcException(ErrorCode.ERROR_CODE_INTERNAL_SERVER_ERROR, "玩家不在游戏中或还没轮到该玩家: " + operator + ", gameId: " + gameId);
                 }
                 List<Card> cardLibrary = aliveGame.getCardLibrary();
                 // 从牌库抓一张牌
@@ -81,7 +81,7 @@ public class AliveGameHolder {
                 Map<Long, AliveGame.Gamer> gamerMap = aliveGame.getGamerMap();
                 AliveGame.Gamer gamer = gamerMap.get(operator);
                 if (gamer == null || gamer.getState() != AliveGame.GamerState.Picking) {
-                    throw new XzcException(ErrorCode.INTERNAL_SERVER_ERROR, "玩家不在游戏中或还没轮到该玩家: " + operator + ", gameId: " + gameId);
+                    throw new XzcException(ErrorCode.ERROR_CODE_INTERNAL_SERVER_ERROR, "玩家不在游戏中或还没轮到该玩家: " + operator + ", gameId: " + gameId);
                 }
                 // 修改玩家手牌
                 if (card == gamer.getDrewCard()) {
@@ -90,7 +90,7 @@ public class AliveGameHolder {
                 } else if (card == gamer.getHandCard()) {
                     gamer.setDrewCard(null);
                 } else {
-                    throw new XzcException(ErrorCode.INTERNAL_SERVER_ERROR, "Not Happened, 玩家的弃牌有问题: " + operator + ", gameId: " + gameId + ", card: " + card.name());
+                    throw new XzcException(ErrorCode.ERROR_CODE_INTERNAL_SERVER_ERROR, "Not Happened, 玩家的弃牌有问题: " + operator + ", gameId: " + gameId + ", card: " + card.name());
                 }
 
                 // 回合结束
@@ -124,7 +124,7 @@ public class AliveGameHolder {
                 Map<Long, AliveGame.Gamer> gamerMap = aliveGame.getGamerMap();
                 AliveGame.Gamer gamer = gamerMap.get(operator);
                 if (gamer == null || gamer.getState() != AliveGame.GamerState.InAction) {
-                    throw new XzcException(ErrorCode.INTERNAL_SERVER_ERROR, "玩家不在游戏中或还没轮到该玩家: " + operator + ", gameId: " + gameId);
+                    throw new XzcException(ErrorCode.ERROR_CODE_INTERNAL_SERVER_ERROR, "玩家不在游戏中或还没轮到该玩家: " + operator + ", gameId: " + gameId);
                 }
                 List<Card> cardLibrary = aliveGame.getCardLibrary();
                 // 从牌库拿一张牌

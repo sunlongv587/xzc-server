@@ -5,10 +5,10 @@ import com.google.protobuf.GeneratedMessageV3;
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import xzc.server.proto.MessageType;
-import xzc.server.proto.SignalMessage;
-import xzc.server.proto.XzcCommand;
-import xzc.server.proto.XzcSignal;
+import xzc.server.proto.common.MessageType;
+import xzc.server.proto.common.SignalMessage;
+import xzc.server.proto.common.XzcCommand;
+import xzc.server.proto.common.XzcSignal;
 import xzc.server.websocket.WebsocketHolder;
 
 import java.util.List;
@@ -40,7 +40,7 @@ public class PushService {
     }
 
     public void pushSignal(Long receiver, XzcSignal signal) {
-        push(receiver, MessageType.SIGNAL, signal);
+        push(receiver, MessageType.MESSAGE_TYPE_SIGNAL, signal);
     }
 
     public void pushSignal(Channel channel, XzcSignal signal) {
@@ -62,7 +62,7 @@ public class PushService {
                 .setGameId(1)
                 .setTimestamp(System.currentTimeMillis())
                 .setMessageId(uuid)
-                .setType(MessageType.SIGNAL)
+                .setType(MessageType.MESSAGE_TYPE_SIGNAL)
                 .setVersion("1.0")
                 .setPayload(Any.pack(signal))
                 .build();

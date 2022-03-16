@@ -6,7 +6,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Component;
 import xzc.server.constant.RedisKey;
-import xzc.server.proto.RoomType;
+import xzc.server.proto.room.RoomType;
 
 import java.util.List;
 import java.util.Set;

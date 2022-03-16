@@ -9,10 +9,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import xzc.server.bean.AliveGame;
 import xzc.server.bean.UserInfo;
-import xzc.server.proto.LoginRequest;
-import xzc.server.proto.LoginResponse;
-import xzc.server.proto.XzcCommand;
-import xzc.server.proto.XzcSignal;
+import xzc.server.proto.account.LoginRequest;
+import xzc.server.proto.account.LoginResponse;
+import xzc.server.proto.common.XzcCommand;
+import xzc.server.proto.common.XzcSignal;
 import xzc.server.websocket.WebsocketHolder;
 
 import java.math.BigDecimal;
@@ -48,7 +48,7 @@ public class AccountService {
         // 返回登录响应
         LoginResponse loginResponse = LoginResponse.newBuilder()
                 .setSuccess(true)
-                .setUserInfo(xzc.server.proto.UserInfo.newBuilder()
+                .setUserInfo(xzc.server.proto.account.UserInfo.newBuilder()
                         .setUid(userInfo.getUid())
                         .setNickname(userInfo.getNickname())
                         .setAvatar(userInfo.getAvatar())
@@ -57,7 +57,7 @@ public class AccountService {
                 .build();
         // 封装成Signal
         XzcSignal xzcSignal = XzcSignal.newBuilder()
-                .setCommand(XzcCommand.LOGIN_RESPONSE)
+                .setCommand(XzcCommand.XZC_COMMAND_LOGIN_RESPONSE)
                 .setBody(Any.pack(loginResponse))
                 .build();
         // 返回信息给客户端

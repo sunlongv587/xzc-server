@@ -7,7 +7,9 @@ import xzc.server.bean.AliveGame;
 import xzc.server.bean.AliveRoom;
 import xzc.server.bean.UserInfo;
 import xzc.server.exception.XzcException;
-import xzc.server.proto.*;
+import xzc.server.proto.common.ErrorCode;
+import xzc.server.proto.common.XzcCommand;
+import xzc.server.proto.room.*;
 import xzc.server.util.BeanConverter;
 
 import java.util.ArrayList;
@@ -46,17 +48,17 @@ public class RoomService {
             aliveRoom = aliveRoomHolder.createAndJoinRoom(roomType, userInfo);
         }
         if (aliveRoom == null) {
-            throw new XzcException(ErrorCode.QUICK_JOIN_FAILED, "加入失败");
+            throw new XzcException(ErrorCode.ERROR_CODE_QUICK_JOIN_FAILED, "加入失败");
         }
         // 通知客户端
         QuickJoinRoomResponse quickJoinRoomResponse = QuickJoinRoomResponse.newBuilder()
                 .setRoomId(aliveRoom.getRoomId())
-                .putAllRoomMembers(aliveRoom.getMembersMap().values()
+                .putAllMembersMap(aliveRoom.getMembersMap().values()
                         .stream()
                         .map(BeanConverter::member2RoomMember)
                         .collect(Collectors.toMap(RoomMember::getUid, Function.identity())))
                 .build();
-        pushService.pushSignal(userInfo.getUid(), PushService.packBodyWithCommand(quickJoinRoomResponse, XzcCommand.QUICK_JOIN_ROOM_RESPONSE));
+        pushService.pushSignal(userInfo.getUid(), PushService.packBodyWithCommand(quickJoinRoomResponse, XzcCommand.XZC_COMMAND_QUICK_JOIN_ROOM_RESPONSE));
         // 通知房间内的其他成员
 //        pushService.batchPushSignal(new ArrayList<>(aliveRoom.getMembersMap().keySet()), xzcSignal);
         // 维护缓存
@@ -70,13 +72,13 @@ public class RoomService {
         // 通知客户端
         ReadyResponse readyResponse = ReadyResponse.newBuilder()
                 .setRoomId(roomId)
-                .putAllRoomMembers(aliveRoom.getMembersMap().values()
+                .putAllMembersMap(aliveRoom.getMembersMap().values()
                         .stream()
                         .map(BeanConverter::member2RoomMember)
                         .collect(Collectors.toMap(RoomMember::getUid, Function.identity())))
                 .build();
         // 通知房间内的其他成员
-        pushService.batchPushSignal(new ArrayList<>(aliveRoom.getMembersMap().keySet()), PushService.packBodyWithCommand(readyResponse, XzcCommand.READY_RESPONSE));
+        pushService.batchPushSignal(new ArrayList<>(aliveRoom.getMembersMap().keySet()), PushService.packBodyWithCommand(readyResponse, XzcCommand.XZC_COMMAND_READY_RESPONSE));
     }
 
     /**
@@ -99,7 +101,7 @@ public class RoomService {
                 .setRoomId(aliveRoom.getRoomId())
                 .setGameId(aliveGame.getId())
                 .build();
-        pushService.pushSignal(userInfo.getUid(), PushService.packBodyWithCommand(startResponse, XzcCommand.READY_RESPONSE));
+        pushService.pushSignal(userInfo.getUid(), PushService.packBodyWithCommand(startResponse, XzcCommand.XZC_COMMAND_READY_RESPONSE));
         // todo 通知其他所有玩家
         userRelationCache.onStartGame(userInfo.getUid(), aliveGame.getId());
     }
@@ -124,7 +126,7 @@ public class RoomService {
         QuitResponse quitResponse = QuitResponse.newBuilder()
                 .setRoomId(aliveRoom.getRoomId())
                 .build();
-        pushService.pushSignal(userInfo.getUid(), PushService.packBodyWithCommand(quitResponse, XzcCommand.QUIT_RESPONSE));
+        pushService.pushSignal(userInfo.getUid(), PushService.packBodyWithCommand(quitResponse, XzcCommand.XZC_COMMAND_QUIT_RESPONSE));
         // todo 通知其他所有玩家
 
         userRelationCache.onQuitRoom(userInfo.getUid(), aliveRoom.getRoomId());

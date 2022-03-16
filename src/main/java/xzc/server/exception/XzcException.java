@@ -1,7 +1,7 @@
 package xzc.server.exception;
 
 import lombok.Getter;
-import xzc.server.proto.ErrorCode;
+import xzc.server.proto.common.ErrorCode;
 
 import java.text.MessageFormat;
 import java.util.Map;

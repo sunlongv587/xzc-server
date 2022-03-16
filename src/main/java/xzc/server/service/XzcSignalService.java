@@ -9,7 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import xzc.server.bean.UserInfo;
 import xzc.server.exception.XzcException;
-import xzc.server.proto.*;
+import xzc.server.proto.common.*;
+import xzc.server.proto.account.*;
+import xzc.server.proto.game.*;
+import xzc.server.proto.room.*;
 import xzc.server.websocket.WebsocketHolder;
 
 import java.util.Map;
@@ -44,58 +47,58 @@ public class XzcSignalService {
                 Any body = signal.getBody();
                 UserInfo userInfo = (UserInfo) ctx.channel().attr(AttributeKey.valueOf("userInfo")).get();
                 switch (command) {
-                    case LOGIN_REQUEST:
+                    case XZC_COMMAND_LOGIN_REQUEST:
                         if (body.is(LoginRequest.class)) {
                             LoginRequest loginRequest = body.unpack(LoginRequest.class);
                             accountService.login(ctx, loginRequest);
                         }
                         break;
-                    case QUICK_JOIN_ROOM_REQUEST:
+                    case XZC_COMMAND_QUICK_JOIN_ROOM_REQUEST:
                         // 处理快速加入房间请求
                         if (body.is(QuickJoinRoomRequest.class)) {
                             QuickJoinRoomRequest quickJoinRoomRequest = body.unpack(QuickJoinRoomRequest.class);
                             roomService.quickJoin(userInfo, quickJoinRoomRequest);
                         }
                         break;
-                    case READY_REQUEST:
+                    case XZC_COMMAND_READY_REQUEST:
                         // 处理准备请求
                         if (body.is(ReadyRequest.class)) {
                             ReadyRequest readyRequest = body.unpack(ReadyRequest.class);
                             roomService.ready(userInfo, readyRequest);
                         }
                         break;
-                    case START_REQUEST:
+                    case XZC_COMMAND_START_REQUEST:
                         // 处理开始请求
                         if (body.is(StartRequest.class)) {
                             StartRequest startRequest = body.unpack(StartRequest.class);
                             roomService.start(userInfo, startRequest);
                         }
                         break;
-                    case QUIT_REQUEST:
+                    case XZC_COMMAND_QUIT_REQUEST:
                         // 处理退出请求
                         if (body.is(QuitRequest.class)) {
                             QuitRequest quitRequest = body.unpack(QuitRequest.class);
                             roomService.quit(userInfo, quitRequest);
                         }
                         break;
-                    case QUICK_CHANGE_REQUEST:
+                    case XZC_COMMAND_QUICK_CHANGE_REQUEST:
                         // todo 快速更换房间
                         break;
-                    case TAKE_CARD_REQUEST:
+                    case XZC_COMMAND_TAKE_CARD_REQUEST:
                         // 抓牌
                         if (body.is(TakeCardRequest.class)) {
                             TakeCardRequest takeCardRequest = body.unpack(TakeCardRequest.class);
                             gameService.takeCard(userInfo, takeCardRequest);
                         }
                         break;
-                    case DISCARD_REQUEST:
+                    case XZC_COMMAND_DISCARD_REQUEST:
                         // 弃牌
                         if (body.is(DiscardRequest.class)) {
                             DiscardRequest discardRequest = body.unpack(DiscardRequest.class);
                             gameService.discard(userInfo, discardRequest);
                         }
                         break;
-                    case CHANGE_XZC_CARD_REQUEST:
+                    case XZC_COMMAND_CHANGE_XZC_CARD_REQUEST:
                         // 更换小早川牌
                         if (body.is(ChangeXzcCardRequest.class)) {
                             ChangeXzcCardRequest changeXzcCardRequest = body.unpack(ChangeXzcCardRequest.class);
@@ -103,15 +106,15 @@ public class XzcSignalService {
                         }
                         break;
 
-                    case LOGIN_RESPONSE:
-                    case QUICK_JOIN_ROOM_RESPONSE:
-                    case READY_RESPONSE:
-                    case START_RESPONSE:
-                    case QUIT_RESPONSE:
-                    case QUICK_CHANGE_RESPONSE:
-                    case TAKE_CARD_RESPONSE:
-                    case DISCARD_RESPONSE:
-                    case CHANGE_XZC_CARD_RESPONSE:
+                    case XZC_COMMAND_LOGIN_RESPONSE:
+                    case XZC_COMMAND_QUICK_JOIN_ROOM_RESPONSE:
+                    case XZC_COMMAND_READY_RESPONSE:
+                    case XZC_COMMAND_START_RESPONSE:
+                    case XZC_COMMAND_QUIT_RESPONSE:
+                    case XZC_COMMAND_QUICK_CHANGE_RESPONSE:
+                    case XZC_COMMAND_TAKE_CARD_RESPONSE:
+                    case XZC_COMMAND_DISCARD_RESPONSE:
+                    case XZC_COMMAND_CHANGE_XZC_CARD_RESPONSE:
                         log.warn("Response command: {}, Ignore handle", command.name());
                         break;
 
@@ -130,7 +133,7 @@ public class XzcSignalService {
                 builder.putAllData(data);
             }
             XzcSignal xzcSignal = XzcSignal.newBuilder()
-                    .setCommand(XzcCommand.ERROR_RESPONSE)
+                    .setCommand(XzcCommand.XZC_COMMAND_ERROR_RESPONSE)
                     .setBody(Any.pack(builder.build()))
                     .build();
             pushService.pushSignal(ctx.channel(), xzcSignal);

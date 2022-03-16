@@ -1,7 +1,7 @@
 package xzc.server.util;
 
 import xzc.server.bean.AliveRoom;
-import xzc.server.proto.RoomMember;
+import xzc.server.proto.room.RoomMember;
 
 public class BeanConverter {
     public static RoomMember member2RoomMember(AliveRoom.Member member) {

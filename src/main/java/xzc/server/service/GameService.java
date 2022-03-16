@@ -7,7 +7,8 @@ import xzc.server.bean.AliveGame;
 import xzc.server.bean.AliveRoom;
 import xzc.server.bean.UserInfo;
 import xzc.server.constant.Card;
-import xzc.server.proto.*;
+import xzc.server.proto.game.*;
+import xzc.server.proto.common.*;
 
 import java.util.List;
 import java.util.Map;
@@ -69,7 +70,7 @@ public class GameService {
         // TODO: 2022/3/14 响应客户端，
         TakeCardResponse takeCardResponse = TakeCardResponse.newBuilder().setCard(Card.toXzcCard(drewCard)).build();
         pushService.pushSignal(userInfo.getUid(), PushService
-                .packBodyWithCommand(takeCardResponse, XzcCommand.TAKE_CARD_RESPONSE));
+                .packBodyWithCommand(takeCardResponse, XzcCommand.XZC_COMMAND_TAKE_CARD_RESPONSE));
         // TODO: 2022/3/14 通知其他玩家
 
     }
