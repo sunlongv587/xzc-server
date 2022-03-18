@@ -73,30 +73,28 @@ public class AliveGame {
 
     public enum GamerState {
         // 等待中
-        Waiting,
-        // 托管中
-        Entrusted,
+        WAIT,
         // 行动中
-        InAction,
-        // 选择中
-        Picking,
+        ACTION,
+        // 弃牌
+        DISCARD,
         // 下注
-        Betting,
-        // 加入赌局
-        InBet;
+        BET,
+        // 已下注
+        IN_BET;
     }
 
     public enum GamerEvent {
         // 抓牌
-        TakeCard,
+        TAKE_CARD,
         // 弃牌
-        Discard,
+        DISCARD,
         // 变更小早川牌
-        ChangeXzcCard,
+        CHANGE_XZC_CARD,
         // 下注
-        Betting,
+        BETTING,
         // 不下注
-        Pass;
+        PASS;
     }
 
 }

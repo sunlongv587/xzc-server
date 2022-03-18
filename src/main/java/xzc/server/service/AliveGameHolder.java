@@ -56,15 +56,15 @@ public class AliveGameHolder {
             protected AliveGame innerCall() throws Exception {
                 Map<Long, AliveGame.Gamer> gamerMap = aliveGame.getGamerMap();
                 AliveGame.Gamer gamer = gamerMap.get(operator);
-                if (gamer == null || gamer.getState() != AliveGame.GamerState.InAction) {
+                if (gamer == null || gamer.getState() != AliveGame.GamerState.ACTION) {
                     throw new XzcException(ErrorCode.ERROR_CODE_INTERNAL_SERVER_ERROR, "玩家不在游戏中或还没轮到该玩家: " + operator + ", gameId: " + gameId);
                 }
                 List<Card> cardLibrary = aliveGame.getCardLibrary();
                 // 从牌库抓一张牌
                 int cardLibraryIndex = aliveGame.getCardLibraryIndex();
                 gamer.setDrewCard(cardLibrary.get(cardLibraryIndex))
-                        .setState(AliveGame.GamerState.Picking)
-                        .setEvent(AliveGame.GamerEvent.TakeCard);
+                        .setState(AliveGame.GamerState.DISCARD)
+                        .setEvent(AliveGame.GamerEvent.TAKE_CARD);
                 aliveGame.setCardLibraryIndex(cardLibraryIndex + 1);
                 return aliveGame;
             }
@@ -80,7 +80,7 @@ public class AliveGameHolder {
             protected AliveGame innerCall() throws Exception {
                 Map<Long, AliveGame.Gamer> gamerMap = aliveGame.getGamerMap();
                 AliveGame.Gamer gamer = gamerMap.get(operator);
-                if (gamer == null || gamer.getState() != AliveGame.GamerState.Picking) {
+                if (gamer == null || gamer.getState() != AliveGame.GamerState.DISCARD) {
                     throw new XzcException(ErrorCode.ERROR_CODE_INTERNAL_SERVER_ERROR, "玩家不在游戏中或还没轮到该玩家: " + operator + ", gameId: " + gameId);
                 }
                 // 修改玩家手牌
@@ -94,8 +94,8 @@ public class AliveGameHolder {
                 }
 
                 // 回合结束
-                gamer.setState(AliveGame.GamerState.Waiting)
-                        .setEvent(AliveGame.GamerEvent.Discard);
+                gamer.setState(AliveGame.GamerState.WAIT)
+                        .setEvent(AliveGame.GamerEvent.DISCARD);
                 // 判断是否是最后一个玩家
                 int orderedGamersIndex = aliveGame.getOrderedGamersIndex();
                 if (orderedGamersIndex == aliveGame.getOrderlyGamers().size() - 1) {
@@ -103,13 +103,13 @@ public class AliveGameHolder {
                     orderedGamersIndex = 0;
                     Long gamerId = aliveGame.getOrderlyGamers().get(orderedGamersIndex);
                     aliveGame.getGamerMap().get(gamerId)
-                            .setState(AliveGame.GamerState.Betting);
+                            .setState(AliveGame.GamerState.BET);
                 } else {
                     orderedGamersIndex++;
                     Long gamerId = aliveGame.getOrderlyGamers().get(orderedGamersIndex);
                     // 轮到下个玩家
                     aliveGame.getGamerMap().get(gamerId)
-                            .setState(AliveGame.GamerState.InAction);
+                            .setState(AliveGame.GamerState.ACTION);
                 }
                 return aliveGame;
             }
@@ -123,7 +123,7 @@ public class AliveGameHolder {
             protected AliveGame innerCall() throws Exception {
                 Map<Long, AliveGame.Gamer> gamerMap = aliveGame.getGamerMap();
                 AliveGame.Gamer gamer = gamerMap.get(operator);
-                if (gamer == null || gamer.getState() != AliveGame.GamerState.InAction) {
+                if (gamer == null || gamer.getState() != AliveGame.GamerState.ACTION) {
                     throw new XzcException(ErrorCode.ERROR_CODE_INTERNAL_SERVER_ERROR, "玩家不在游戏中或还没轮到该玩家: " + operator + ", gameId: " + gameId);
                 }
                 List<Card> cardLibrary = aliveGame.getCardLibrary();
@@ -135,8 +135,8 @@ public class AliveGameHolder {
                 aliveGame.setXzcCard(xzcCard)
                         .setCardLibraryIndex(cardLibraryIndex + 1);
                 // 回合结束
-                gamer.setState(AliveGame.GamerState.Waiting)
-                        .setEvent(AliveGame.GamerEvent.ChangeXzcCard);
+                gamer.setState(AliveGame.GamerState.WAIT)
+                        .setEvent(AliveGame.GamerEvent.CHANGE_XZC_CARD);
                 // 判断是否是最后一个玩家
                 int orderedGamersIndex = aliveGame.getOrderedGamersIndex();
                 if (orderedGamersIndex == aliveGame.getOrderlyGamers().size() - 1) {
@@ -144,13 +144,13 @@ public class AliveGameHolder {
                     orderedGamersIndex = 0;
                     Long gamerId = aliveGame.getOrderlyGamers().get(orderedGamersIndex);
                     aliveGame.getGamerMap().get(gamerId)
-                            .setState(AliveGame.GamerState.Betting);
+                            .setState(AliveGame.GamerState.BET);
                 } else {
                     orderedGamersIndex++;
                     Long gamerId = aliveGame.getOrderlyGamers().get(orderedGamersIndex);
                     // 轮到下个玩家
                     aliveGame.getGamerMap().get(gamerId)
-                            .setState(AliveGame.GamerState.InAction);
+                            .setState(AliveGame.GamerState.ACTION);
                 }
                 return aliveGame;
             }
