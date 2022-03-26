@@ -8,11 +8,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import xzc.server.bean.UserInfo;
+import xzc.server.constant.GameType;
 import xzc.server.exception.XzcException;
 import xzc.server.proto.common.*;
 import xzc.server.proto.account.*;
 import xzc.server.proto.game.*;
 import xzc.server.proto.room.*;
+import xzc.server.websocket.SignalHeader;
+import xzc.server.websocket.SignalMessage;
 import xzc.server.websocket.WebsocketHolder;
 
 import java.util.Map;
@@ -40,86 +43,70 @@ public class XzcSignalService {
     public void handleSignal(ChannelHandlerContext ctx, SignalMessage msg) throws Exception {
 
         try {
-            Any payload = msg.getPayload();
-            if (payload.is(XzcSignal.class)) {
-                XzcSignal signal = payload.unpack(XzcSignal.class);
-                XzcCommand command = signal.getCommand();
-                Any body = signal.getBody();
+            SignalHeader header = msg.getHeader();
+            byte[] body = msg.getBody();
+            if (header.getGameId() == GameType.XZC.getId()) {
+                int signal = header.getSignal();
+                SignalType signalType = SignalType.forNumber(signal);
                 UserInfo userInfo = (UserInfo) ctx.channel().attr(AttributeKey.valueOf("userInfo")).get();
-                switch (command) {
-                    case XZC_COMMAND_LOGIN_REQUEST:
-                        if (body.is(LoginRequest.class)) {
-                            LoginRequest loginRequest = body.unpack(LoginRequest.class);
-                            accountService.login(ctx, loginRequest);
-                        }
+                switch (signalType) {
+                    case SIGNAL_TYPE_LOGIN_REQUEST:
+                        LoginRequest loginRequest = LoginRequest.parseFrom(body);
+                        accountService.login(ctx, loginRequest);
                         break;
-                    case XZC_COMMAND_QUICK_JOIN_ROOM_REQUEST:
+                    case SIGNAL_TYPE_QUICK_JOIN_ROOM_REQUEST:
                         // 处理快速加入房间请求
-                        if (body.is(QuickJoinRoomRequest.class)) {
-                            QuickJoinRoomRequest quickJoinRoomRequest = body.unpack(QuickJoinRoomRequest.class);
-                            roomService.quickJoin(userInfo, quickJoinRoomRequest);
-                        }
+                        QuickJoinRoomRequest quickJoinRoomRequest = QuickJoinRoomRequest.parseFrom(body);
+                        roomService.quickJoin(userInfo, quickJoinRoomRequest);
                         break;
-                    case XZC_COMMAND_READY_REQUEST:
+                    case SIGNAL_TYPE_READY_REQUEST:
                         // 处理准备请求
-                        if (body.is(ReadyRequest.class)) {
-                            ReadyRequest readyRequest = body.unpack(ReadyRequest.class);
-                            roomService.ready(userInfo, readyRequest);
-                        }
+                        ReadyRequest readyRequest = ReadyRequest.parseFrom(body);
+                        roomService.ready(userInfo, readyRequest);
                         break;
-                    case XZC_COMMAND_START_REQUEST:
+                    case SIGNAL_TYPE_START_REQUEST:
                         // 处理开始请求
-                        if (body.is(StartRequest.class)) {
-                            StartRequest startRequest = body.unpack(StartRequest.class);
+                            StartRequest startRequest = StartRequest.parseFrom(body);
                             roomService.start(userInfo, startRequest);
-                        }
                         break;
-                    case XZC_COMMAND_QUIT_REQUEST:
+                    case SIGNAL_TYPE_QUIT_REQUEST:
                         // 处理退出请求
-                        if (body.is(QuitRequest.class)) {
-                            QuitRequest quitRequest = body.unpack(QuitRequest.class);
+                            QuitRequest quitRequest = QuitRequest.parseFrom(body);
                             roomService.quit(userInfo, quitRequest);
-                        }
                         break;
-                    case XZC_COMMAND_QUICK_CHANGE_REQUEST:
+                    case SIGNAL_TYPE_QUICK_CHANGE_REQUEST:
                         // todo 快速更换房间
                         break;
-                    case XZC_COMMAND_TAKE_CARD_REQUEST:
+                    case SIGNAL_TYPE_TAKE_CARD_REQUEST:
                         // 抓牌
-                        if (body.is(TakeCardRequest.class)) {
-                            TakeCardRequest takeCardRequest = body.unpack(TakeCardRequest.class);
+                            TakeCardRequest takeCardRequest = TakeCardRequest.parseFrom(body);
                             gameService.takeCard(userInfo, takeCardRequest);
-                        }
                         break;
-                    case XZC_COMMAND_DISCARD_REQUEST:
+                    case SIGNAL_TYPE_DISCARD_REQUEST:
                         // 弃牌
-                        if (body.is(DiscardRequest.class)) {
-                            DiscardRequest discardRequest = body.unpack(DiscardRequest.class);
+                            DiscardRequest discardRequest = DiscardRequest.parseFrom(body);
                             gameService.discard(userInfo, discardRequest);
-                        }
                         break;
-                    case XZC_COMMAND_CHANGE_XZC_CARD_REQUEST:
+                    case SIGNAL_TYPE_CHANGE_XZC_CARD_REQUEST:
                         // 更换小早川牌
-                        if (body.is(ChangeXzcCardRequest.class)) {
-                            ChangeXzcCardRequest changeXzcCardRequest = body.unpack(ChangeXzcCardRequest.class);
+                            ChangeXzcCardRequest changeXzcCardRequest = ChangeXzcCardRequest.parseFrom(body);
                             gameService.changeXzcCard(userInfo, changeXzcCardRequest);
-                        }
                         break;
 
-                    case XZC_COMMAND_LOGIN_RESPONSE:
-                    case XZC_COMMAND_QUICK_JOIN_ROOM_RESPONSE:
-                    case XZC_COMMAND_READY_RESPONSE:
-                    case XZC_COMMAND_START_RESPONSE:
-                    case XZC_COMMAND_QUIT_RESPONSE:
-                    case XZC_COMMAND_QUICK_CHANGE_RESPONSE:
-                    case XZC_COMMAND_TAKE_CARD_RESPONSE:
-                    case XZC_COMMAND_DISCARD_RESPONSE:
-                    case XZC_COMMAND_CHANGE_XZC_CARD_RESPONSE:
-                        log.warn("Response command: {}, Ignore handle", command.name());
+                    case SIGNAL_TYPE_LOGIN_RESPONSE:
+                    case SIGNAL_TYPE_QUICK_JOIN_ROOM_RESPONSE:
+                    case SIGNAL_TYPE_READY_RESPONSE:
+                    case SIGNAL_TYPE_START_RESPONSE:
+                    case SIGNAL_TYPE_QUIT_RESPONSE:
+                    case SIGNAL_TYPE_QUICK_CHANGE_RESPONSE:
+                    case SIGNAL_TYPE_TAKE_CARD_RESPONSE:
+                    case SIGNAL_TYPE_DISCARD_RESPONSE:
+                    case SIGNAL_TYPE_CHANGE_XZC_CARD_RESPONSE:
+                        log.warn("Response signal: {}, Ignore handle", signalType.name());
                         break;
 
                     default:
-                        log.warn("Unknown command: {}, Ignore handle", command.name());
+                        log.warn("Unknown signal: {}, Ignore handle", signalType.name());
                         break;
                 }
             }
@@ -132,11 +119,7 @@ public class XzcSignalService {
             if (data != null) {
                 builder.putAllData(data);
             }
-            XzcSignal xzcSignal = XzcSignal.newBuilder()
-                    .setCommand(XzcCommand.XZC_COMMAND_ERROR_RESPONSE)
-                    .setBody(Any.pack(builder.build()))
-                    .build();
-            pushService.pushSignal(ctx.channel(), xzcSignal);
+            pushService.push(ctx.channel(), SignalType.SIGNAL_TYPE_ERROR_RESPONSE, builder.build());
         } catch (Exception e) {
             log.warn("处理信令异常，", e);
         } finally {

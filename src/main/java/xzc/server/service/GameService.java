@@ -69,8 +69,8 @@ public class GameService {
         Card drewCard = aliveGame.getGamerMap().get(userInfo.getUid()).getDrewCard();
         // TODO: 2022/3/14 响应客户端，
         TakeCardResponse takeCardResponse = TakeCardResponse.newBuilder().setCard(Card.toXzcCard(drewCard)).build();
-        pushService.pushSignal(userInfo.getUid(), PushService
-                .packBodyWithCommand(takeCardResponse, XzcCommand.XZC_COMMAND_TAKE_CARD_RESPONSE));
+        pushService.push(userInfo.getUid(), PushService
+                .packSignalWithType(SignalType.SIGNAL_TYPE_TAKE_CARD_RESPONSE, takeCardResponse));
         // TODO: 2022/3/14 通知其他玩家
 
     }

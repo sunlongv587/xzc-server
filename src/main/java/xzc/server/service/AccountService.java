@@ -1,6 +1,5 @@
 package xzc.server.service;
 
-import com.google.protobuf.Any;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.AttributeKey;
 import lombok.extern.slf4j.Slf4j;
@@ -11,8 +10,7 @@ import xzc.server.bean.AliveGame;
 import xzc.server.bean.UserInfo;
 import xzc.server.proto.account.LoginRequest;
 import xzc.server.proto.account.LoginResponse;
-import xzc.server.proto.common.XzcCommand;
-import xzc.server.proto.common.XzcSignal;
+import xzc.server.proto.common.SignalType;
 import xzc.server.websocket.WebsocketHolder;
 
 import java.math.BigDecimal;
@@ -55,13 +53,8 @@ public class AccountService {
                         .setBeans(userInfo.getBeans().doubleValue())
                         .build())
                 .build();
-        // 封装成Signal
-        XzcSignal xzcSignal = XzcSignal.newBuilder()
-                .setCommand(XzcCommand.XZC_COMMAND_LOGIN_RESPONSE)
-                .setBody(Any.pack(loginResponse))
-                .build();
         // 返回信息给客户端
-        pushService.pushSignal(userInfo.getUid(), xzcSignal);
+        pushService.push(userInfo.getUid(), SignalType.SIGNAL_TYPE_LOGIN_RESPONSE, loginResponse);
         // todo 检查用户是否是中途掉线
         Map<Object, Object> userRelation = userRelationCache.getUserRelation(userInfo.getUid());
         if (!CollectionUtils.isEmpty(userRelation)) {

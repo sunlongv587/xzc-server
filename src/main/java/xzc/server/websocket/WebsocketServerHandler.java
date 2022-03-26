@@ -1,14 +1,12 @@
 package xzc.server.websocket;
 
-import com.google.protobuf.Any;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import lombok.extern.slf4j.Slf4j;
-import xzc.server.proto.common.MessageType;
-import xzc.server.proto.common.SignalMessage;
+import xzc.server.proto.common.SignalType;
 import xzc.server.service.XzcSignalService;
 
 @ChannelHandler.Sharable
@@ -44,6 +42,7 @@ public class WebsocketServerHandler extends SimpleChannelInboundHandler<SignalMe
      */
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        log.info("userEventTriggered sid:{},ip:{}", ctx.channel().id(), ctx.channel().remoteAddress());
         if (evt instanceof IdleStateEvent) {
             IdleStateEvent idleStateEvent = (IdleStateEvent) evt;
             // 读空闲
@@ -60,28 +59,23 @@ public class WebsocketServerHandler extends SimpleChannelInboundHandler<SignalMe
      * 读到客户端的内容
      *
      * @param ctx
-     * @param msg
+     * @param signalMessage
      * @throws Exception
      */
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, SignalMessage msg) throws Exception {
-        String messageId = msg.getMessageId();
-        int gameId = msg.getGameId();
-        MessageType type = msg.getType();
-        long timestamp = msg.getTimestamp();
-        Any payload = msg.getPayload();
-        switch (type) {
-            case MESSAGE_TYPE_ECHO: // 心跳
+    protected void channelRead0(ChannelHandlerContext ctx, SignalMessage signalMessage) throws Exception {
+        int gameId = signalMessage.getHeader().getGameId();
+        int signal = signalMessage.getHeader().getSignal();
+        SignalType signalType = SignalType.forNumber(signal);
+        long timestamp = signalMessage.getHeader().getTimestamp();
+//        Any payload = signalMessage.getPayload();
+        switch (signalType) {
+            case SIGNAL_TYPE_BETTING_REQUEST: // 心跳
                 log.info("客户端echo");
-                echo(ctx, msg);
-                break;
-            case MESSAGE_TYPE_SIGNAL: // 处理信令
-                log.info("客户端信令signal");
-                if (gameId == 1) {
-                    xzcSignalService.handleSignal(ctx, msg);
-                }
+                echo(ctx, signalMessage);
                 break;
             default:
+                xzcSignalService.handleSignal(ctx, signalMessage);
                 log.info("未知类型");
         }
     }
@@ -101,5 +95,4 @@ public class WebsocketServerHandler extends SimpleChannelInboundHandler<SignalMe
 
         log.error(cause.getMessage(), cause);
     }
-
 }

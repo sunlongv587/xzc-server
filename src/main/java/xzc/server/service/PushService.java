@@ -5,10 +5,9 @@ import com.google.protobuf.GeneratedMessageV3;
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import xzc.server.proto.common.MessageType;
-import xzc.server.proto.common.SignalMessage;
-import xzc.server.proto.common.XzcCommand;
-import xzc.server.proto.common.XzcSignal;
+import xzc.server.proto.common.SignalType;
+import xzc.server.websocket.SignalHeader;
+import xzc.server.websocket.SignalMessage;
 import xzc.server.websocket.WebsocketHolder;
 
 import java.util.List;
@@ -18,7 +17,7 @@ import java.util.UUID;
 @Service
 public class PushService {
 
-    public void pushMessage(Long uid, SignalMessage message) {
+    public void push(Long uid, SignalMessage message) {
         Channel channel = WebsocketHolder.get(uid);
         if (channel != null && channel.isActive()) {
             channel.writeAndFlush(message);
@@ -27,67 +26,36 @@ public class PushService {
         }
     }
 
-    public void batchPushMessage(List<Long> uids, SignalMessage message) {
-        uids.forEach(uid -> pushMessage(uid, message));
+    public void batchPush(List<Long> uids, SignalMessage message) {
+        uids.forEach(uid -> push(uid, message));
     }
 
-    public void batchPush(List<Long> receivers, MessageType messageType, XzcSignal signal) {
-        receivers.forEach(receiver -> push(receiver, messageType, signal));
-    }
-
-    public void batchPushSignal(List<Long> receivers, XzcSignal signal) {
-        receivers.forEach(receiver -> pushSignal(receiver, signal));
-    }
-
-    public void pushSignal(Long receiver, XzcSignal signal) {
-        push(receiver, MessageType.MESSAGE_TYPE_SIGNAL, signal);
-    }
-
-    public void pushSignal(Channel channel, XzcSignal signal) {
+    public void push(Channel channel, SignalMessage signal) {
         if (channel != null && channel.isActive()) {
-            channel.writeAndFlush(packSignal(signal));
+            channel.writeAndFlush(signal);
         } else {
             log.warn("用户离线，uid: {}", channel);
         }
     }
 
-    public void push(Long receiver, MessageType messageType, XzcSignal signal) {
-        pushMessage(receiver, packSignalWithType(messageType, signal));
+    public void push(Channel channel, SignalType signalType, GeneratedMessageV3 body) {
+        push(channel, packSignalWithType(signalType, body));
     }
 
-    public static SignalMessage packSignal(XzcSignal signal) {
+    public void push(Long receiver, SignalType signalType, GeneratedMessageV3 body) {
+        push(receiver, packSignalWithType(signalType, body));
+    }
+
+    public static SignalMessage packSignalWithType(SignalType signalType, GeneratedMessageV3 body) {
         String uuid = UUID.randomUUID().toString();
         log.info("uuid: {}", uuid);
-        return SignalMessage.newBuilder()
-                .setGameId(1)
+        byte[] bytes = body.toByteArray();
+
+        return new SignalMessage(new SignalHeader()
+                .setSignal(signalType.getNumber())
                 .setTimestamp(System.currentTimeMillis())
-                .setMessageId(uuid)
-                .setType(MessageType.MESSAGE_TYPE_SIGNAL)
-                .setVersion("1.0")
-                .setPayload(Any.pack(signal))
-                .build();
-    }
+                .setBodySize(bytes.length), bytes);
 
-    public static SignalMessage packSignalWithType(MessageType messageType, XzcSignal signal) {
-        String uuid = UUID.randomUUID().toString();
-        log.info("uuid: {}", uuid);
-        return SignalMessage.newBuilder()
-                .setGameId(1)
-                .setTimestamp(System.currentTimeMillis())
-                .setMessageId(uuid)
-                .setType(messageType)
-                .setVersion("1.0")
-                .setPayload(Any.pack(signal))
-                .build();
-    }
-
-    public static XzcSignal packBodyWithCommand(GeneratedMessageV3 body, XzcCommand command) {
-        String uuid = UUID.randomUUID().toString();
-        log.info("uuid: {}", uuid);
-        return XzcSignal.newBuilder()
-                .setBody(Any.pack(body))
-                .setCommand(command)
-                .build();
     }
 
 }
