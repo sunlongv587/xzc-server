@@ -76,7 +76,6 @@ public class WebsocketServerHandler extends SimpleChannelInboundHandler<SignalMe
                 break;
             default:
                 xzcSignalService.handleSignal(ctx, signalMessage);
-                log.info("未知类型");
         }
     }
 
